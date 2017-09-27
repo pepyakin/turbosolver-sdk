@@ -1,10 +1,11 @@
 package me.pepyakin.turbosolver
 
+import io.reactivex.Completable
 import io.reactivex.Single
 
 interface TurboSolver {
     fun solve(): Single<String>
-    fun destroy(): Single<Unit>
+    fun destroy(): Completable
 }
 
 interface TurboSolverFactory {

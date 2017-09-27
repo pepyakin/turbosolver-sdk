@@ -1,6 +1,7 @@
 
 package me.pepyakin.turbosolver
 
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
@@ -13,6 +14,9 @@ data class CreateSolverReq(val grid: String)
 data class CreateSolverResp(val id: Int)
 data class SolutionResp(val solution: String)
 
+/**
+ * HTTP API for the local TurboSolver server.
+ */
 interface LocalTurboSolverApi {
     @POST("/")
     fun create(@Body req: CreateSolverReq): Observable<CreateSolverResp>
@@ -21,7 +25,7 @@ interface LocalTurboSolverApi {
     fun solution(@Path("id") id: Int): Observable<SolutionResp>
 
     @DELETE("{id}")
-    fun destroy(@Path("id") id: Int): Observable<Unit>
+    fun destroy(@Path("id") id: Int): Completable
 }
 
 class LocalHttpTurboSolver(
@@ -34,9 +38,8 @@ class LocalHttpTurboSolver(
                     .map { it.solution }
                     .subscribeOn(Schedulers.io())
 
-    override fun destroy(): Single<Unit> =
+    override fun destroy(): Completable =
             localTurboSolverApi.destroy(id)
-                    .singleOrError()
                     .subscribeOn(Schedulers.io())
 }
 
