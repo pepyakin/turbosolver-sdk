@@ -1,11 +1,13 @@
+//! Solver itself. You can't change the grid after Solver was created.
+
+// I don't want to implement sudoku solver here by myself, so I just
+// pick some crate that already does the job.
+
 extern crate sudoku;
 
 use error::*;
 use self::sudoku::Sudoku;
 use std::fmt;
-
-// I don't want to implement sudoku solver here by myself, so I just 
-// pick some crate that already does that job.
 
 pub struct Solver(Sudoku);
 
@@ -21,7 +23,7 @@ impl Solver {
 }
 
 /// Wrapper type of sudoku::ParseError.
-/// 
+///
 /// It is needed because sudoku::ParseError doesn't implement Error trait.
 #[derive(Clone, Debug)]
 pub struct ParseError(self::sudoku::ParseError);
