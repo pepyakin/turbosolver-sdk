@@ -50,3 +50,9 @@ pub extern "C" fn solver_destroy(solver: *mut Solver) {
         let _ = Box::from_raw(solver);
     }
 }
+
+#[no_mangle]
+pub extern "C" fn http_deploy() {
+    use http;
+    http::deploy();
+}
