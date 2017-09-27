@@ -13,8 +13,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val factory = LocalHttpTurboSolverFactory.create(8000)
-        val solver = factory.create("""
-___|2__|_63
+        val solver = factory.create("""___|2__|_63
 3__|__5|4_1
 __1|__3|98_
 ___|___|_9_
@@ -24,7 +23,13 @@ _26|3__|5__
 5_3|7__|__8
 47_|__1|___""")
         subscription = solver.flatMap { it.solve() }
-                .subscribe { solution -> println(solution) }
+                .subscribe { solution, error ->
+                    if (solution != null) {
+                        println(solution)
+                    } else {
+                        println(error)
+                    }
+                }
     }
 
     override fun onDestroy() {

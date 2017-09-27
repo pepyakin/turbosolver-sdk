@@ -57,7 +57,7 @@ fn create(req: Json<CreateSolverReq>, ctx: State<Context>) -> Result<Json<Value>
 }
 
 #[get("/<id>/solution")]
-fn solution(id: usize, ctx: State<Context>) -> Result<String, errors::Error> {
+fn solution(id: usize, ctx: State<Context>) -> Result<Json<Value>, errors::Error> {
     let mut solver = {
         let mut solvers = ctx.solvers.lock().unwrap();
         match solvers.remove(&id) {
@@ -72,7 +72,10 @@ fn solution(id: usize, ctx: State<Context>) -> Result<String, errors::Error> {
     solvers.insert(id, solver);
 
     if let Some(solution) = maybe_solution {
-        Ok(solution)
+        let resp = Json(json!({
+            "solution": solution
+        }));
+        Ok(resp)
     } else {
         bail!(errors::ErrorKind::SolutionNotFound);
     }
