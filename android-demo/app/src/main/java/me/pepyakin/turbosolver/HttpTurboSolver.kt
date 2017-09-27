@@ -21,10 +21,10 @@ interface LocalTurboSolverApi {
     @POST("/")
     fun create(@Body req: CreateSolverReq): Observable<CreateSolverResp>
 
-    @GET("{id}/solution")
+    @GET("/{id}/solution")
     fun solution(@Path("id") id: Int): Observable<SolutionResp>
 
-    @DELETE("{id}")
+    @DELETE("/{id}")
     fun destroy(@Path("id") id: Int): Completable
 }
 
