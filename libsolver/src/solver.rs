@@ -51,29 +51,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let sudoku_grid = "\
-___|2__|_63
-3__|__5|4_1
-__1|__3|98_
-___|___|_9_
-___|538|___
-_3_|___|___
-_26|3__|5__
-5_3|7__|__8
-47_|__1|___";
-
-        let expected_solution = "
-854 219 763
-397 865 421
-261 473 985
-
-785 126 394
-649 538 172
-132 947 856
-
-926 384 517
-513 792 648
-478 651 239";
+        let sudoku_grid = include_str!("sudoku.txt");
+        let expected_solution = include_str!("sudoku_solution.txt");
 
         let mut solver = Solver::from_str(sudoku_grid).unwrap();
         let solution = solver.solve().unwrap();

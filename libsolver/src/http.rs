@@ -118,16 +118,7 @@ mod tests {
     }
 
     fn create(client: &Client) -> LocalResponse {
-        let sudoku_grid = "\
-___|2__|_63
-3__|__5|4_1
-__1|__3|98_
-___|___|_9_
-___|538|___
-_3_|___|___
-_26|3__|5__
-5_3|7__|__8
-47_|__1|___";
+        let sudoku_grid = include_str!("sudoku.txt");
         create_custom(client, sudoku_grid)
     }
 
@@ -161,18 +152,7 @@ _26|3__|5__
         let _ = create(&client);
         let mut response = solution(&client, 0);
 
-        let solution = "
-854 219 763
-397 865 421
-261 473 985
-
-785 126 394
-649 538 172
-132 947 856
-
-926 384 517
-513 792 648
-478 651 239";
+        let solution = include_str!("sudoku_solution.txt");
 
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(
@@ -212,16 +192,7 @@ _26|3__|5__
 
     #[test]
     fn test_err_solution_not_found() {
-        let sudoku_grid = "\
-1__|___|___
-_1_|___|___
-__1|___|___
-___|___|___
-___|___|___
-___|___|___
-___|___|___
-___|___|___
-___|___|___";
+        let sudoku_grid = include_str!("bad_sudoku.txt");
 
         let rocket = super::create_rocket();
         let client = Client::new(rocket).unwrap();
