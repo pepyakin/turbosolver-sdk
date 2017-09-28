@@ -2,7 +2,6 @@
 name = "libsolver"
 version = "0.1.0"
 authors = ["Sergey Pepyakin <s.pepyakin@gmail.com>"]
-build = "build.rs"
 
 [lib]
 name = "solver"
@@ -21,6 +20,3 @@ capnp = "0.8"
 
 [target.'cfg(target_os="android")'.dependencies]
 jni = { version = "0.5", default-features = false }
-
-[build-dependencies]
-capnpc = "0.8"
