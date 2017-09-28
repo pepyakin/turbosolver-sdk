@@ -65,21 +65,27 @@ impl Resp {
     }
 }
 
+trait DispatcherCallback {
+    fn call(&mut self, r: Result<Resp>);
+}
+
+impl<F: FnMut(Result<Resp>)> DispatcherCallback for F {
+    fn call(&mut self, r: Result<Resp>) {
+        self(r)
+    }
+}
+
 struct Dispatcher {
     executor: Executor,
 }
 
 impl Dispatcher {
-    fn new(recv: extern "C" fn(*const u8, usize)) -> Dispatcher {
-        let f = move |resp: ::error::Result<Resp>| {
-            let bytes = resp.unwrap().to_bytes().unwrap();
-            recv(bytes.as_ptr(), bytes.len())
-        };
-
-        Dispatcher { executor: Executor::new(f) }
+    fn new<F: DispatcherCallback + Send + 'static>(mut callback: F) -> Dispatcher {
+        let recv = move |resp| { callback.call(resp); };
+        Dispatcher { executor: Executor::new(recv) }
     }
 
-    fn dispatch(&mut self, msg: Vec<u8>) {
+    fn dispatch(&mut self, msg: &[u8]) {
         let req = Req::from_bytes(&msg).expect("wrong schema?");
         self.executor.send(req);
     }
@@ -87,7 +93,11 @@ impl Dispatcher {
 
 #[no_mangle]
 pub extern "C" fn capnp_init(recv: extern "C" fn(*const u8, usize)) -> *mut c_void {
-    let dispatcher = Box::new(Dispatcher::new(recv));
+    let f = move |resp: ::error::Result<Resp>| {
+        let bytes = resp.unwrap().to_bytes().unwrap();
+        recv(bytes.as_ptr(), bytes.len())
+    };
+    let dispatcher = Box::new(Dispatcher::new(f));
     Box::into_raw(dispatcher) as *mut c_void
 }
 
@@ -97,8 +107,111 @@ pub extern "C" fn capnp_send(this: *mut c_void, msg: *const u8, msg_len: usize) 
     unsafe {
         let this = this as *mut Dispatcher;
         let dispatcher = this.as_mut().expect("this shouldn't be null");
-        let msg = slice::from_raw_parts(msg, msg_len).to_vec();
+        let msg = slice::from_raw_parts(msg, msg_len);
         dispatcher.dispatch(msg);
+    }
+}
+
+#[cfg(target_os = "android")]
+#[allow(non_snake_case)]
+pub mod jni {
+    extern crate jni;
+
+    use super::*;
+    use self::jni::JNIEnv;
+    use self::jni::objects::{GlobalRef, JClass, JObject, JValue};
+    use self::jni::sys::jlong;
+    use self::jni::sys::JNIEnv as RawJNIEnv;
+    use self::jni::sys::{JavaVM, jbyteArray};
+
+    use std::ptr;
+    use std::os::raw::c_void;
+
+    struct Context {
+        vm: *mut JavaVM,
+        dispatcher_this: GlobalRef,
+    }
+
+    unsafe impl Send for Context {}
+
+    fn with_attached_thread<F: FnOnce(JNIEnv)>(vm: *mut JavaVM, f: F) {
+        unsafe {
+            let mut raw_env: *mut RawJNIEnv = ptr::null_mut();
+            let attach_current_thread = (**vm).AttachCurrentThread.unwrap();
+            let detach_current_thread = (**vm).DetachCurrentThread.unwrap();
+            let result = attach_current_thread(
+                vm,
+                &mut raw_env as *mut *mut _ as *mut *mut c_void,
+                ptr::null_mut(),
+            );
+            assert!(result == 0);
+
+            let env = JNIEnv::from_raw(raw_env).unwrap();
+            f(env);
+
+            let result = detach_current_thread(vm);
+            assert!(result == 0);
+        }
+    }
+
+    impl DispatcherCallback for Context {
+        fn call(&mut self, r: Result<Resp>) {
+            with_attached_thread(self.vm, |env| {
+                let mut result = r.unwrap().to_bytes().unwrap();
+                let byte_buffer = env.new_direct_byte_buffer(&mut result).unwrap();
+                let byte_buffer_obj = JValue::Object(*byte_buffer);
+
+                let dispatcher_this = self.dispatcher_this.as_obj();
+                env.call_method(
+                    dispatcher_this,
+                    "callback",
+                    "(Ljava/nio/ByteBuffer;)V",
+                    &[byte_buffer_obj],
+                ).unwrap();
+            });
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn Java_me_pepyakin_turbosolver_capnp_Dispatcher_capnp_1init(
+        env: JNIEnv,
+        _: JClass,
+        this: JObject,
+    ) -> jlong {
+        // Pin `this` object, this will prevent `this` to be garbage collected.
+        let dispatcher_this = env.new_global_ref(this).unwrap();
+
+        unsafe {
+            let raw_env = env.get_native_interface();
+            let mut java_vm: *mut JavaVM = ptr::null_mut();
+
+            let get_java_vm = (**raw_env).GetJavaVM.unwrap();
+            let result = get_java_vm(raw_env, &mut java_vm as *mut *mut _);
+            assert!(result == 0);
+
+            let ctx = Context {
+                vm: java_vm,
+                dispatcher_this,
+            };
+            let dispatcher = Box::new(Dispatcher::new(ctx));
+            Box::into_raw(dispatcher) as *mut c_void as jlong
+        }
+    }
+
+    #[no_mangle]
+    pub extern "C" fn Java_me_pepyakin_turbosolver_capnp_Dispatcher_capnp_1send(
+        env: JNIEnv,
+        _: JClass,
+        dispatcher_this_ptr: jlong,
+        data: jbyteArray,
+    ) {
+        // TODO: Can we get away without copying here?
+        let data_vec = env.convert_byte_array(data).unwrap();
+        let dispatcher = dispatcher_this_ptr as *mut c_void as *mut Dispatcher;
+
+        unsafe {
+            dispatcher.as_mut().unwrap().dispatch(&data_vec);
+        }
     }
 }
 

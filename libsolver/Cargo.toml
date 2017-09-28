@@ -19,4 +19,4 @@ serde_derive = "1.0"
 capnp = "0.8"
 
 [target.'cfg(target_os="android")'.dependencies]
-jni = { version = "0.5", default-features = false }
+jni = { version = "0.6.1", default-features = false }

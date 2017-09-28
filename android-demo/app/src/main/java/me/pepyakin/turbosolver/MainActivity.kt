@@ -7,6 +7,7 @@ import io.reactivex.Single
 import io.reactivex.SingleSource
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
+import me.pepyakin.turbosolver.capnp.CapnpTurboSolverFactory
 
 private val sudokuGrid = """___|2__|_63
 3__|__5|4_1
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
         val textView = findViewById(R.id.main_text) as TextView
 
-        val factory = LocalHttpTurboSolverFactory.create(8000)
+        val factory = CapnpTurboSolverFactory.create()
         val solverFuture = factory.create(sudokuGrid)
         subscription = solverFuture
                 .flatMap { solver ->
