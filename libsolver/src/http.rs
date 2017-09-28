@@ -14,7 +14,7 @@ use error::*;
 /// Allows to use `Executor` as if it was fully synchronous.
 struct SyncExecutor {
     executor: Executor,
-    receiver: Receiver<Result<Resp>>,
+    receiver: Receiver<Resp>,
     next_msg_id: AtomicUsize,
 }
 
@@ -35,9 +35,9 @@ impl SyncExecutor {
             id: msg_id,
             kind: req_kind,
         });
-        let resp = self.receiver.recv().unwrap()?;
+        let resp = self.receiver.recv().unwrap();
         assert_eq!(msg_id, resp.id);
-        Ok(resp.kind)
+        resp.kind
     }
 }
 

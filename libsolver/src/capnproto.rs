@@ -44,16 +44,25 @@ impl Resp {
             resp_builder.set_id(self.id as u32);
 
             match self.kind {
-                RespKind::SolverCreated { id } => {
-                    let mut resp = resp_builder.borrow().init_create_solver_resp();
-                    resp.set_id(id as u32);
+                Ok(kind) => {
+                    let mut success = resp_builder.borrow().init_success();
+                        match kind {
+                        RespKind::SolverCreated { id } => {
+                            let mut resp = success.borrow().init_create_solver_resp();
+                            resp.set_id(id as u32);
+                        }
+                        RespKind::SolverResult { ref solution } => {
+                            let mut resp = success.borrow().init_solve_resp();
+                            resp.set_solution(solution);
+                        }
+                        RespKind::Destroyed => {
+                            success.borrow().set_destroy_resp(());
+                        }
+                    }
                 }
-                RespKind::SolverResult { ref solution } => {
-                    let mut resp = resp_builder.borrow().init_solve_resp();
-                    resp.set_solution(solution);
-                }
-                RespKind::Destroyed => {
-                    resp_builder.borrow().set_destroy_resp(());
+                Err(_e) => {
+                    // TODO: turn _e into errno.
+                    resp_builder.set_errno(1);
                 }
             }
         }
@@ -66,11 +75,11 @@ impl Resp {
 }
 
 trait DispatcherCallback {
-    fn call(&mut self, r: Result<Resp>);
+    fn call(&mut self, r: Resp);
 }
 
-impl<F: FnMut(Result<Resp>)> DispatcherCallback for F {
-    fn call(&mut self, r: Result<Resp>) {
+impl<F: FnMut(Resp)> DispatcherCallback for F {
+    fn call(&mut self, r: Resp) {
         self(r)
     }
 }
@@ -93,8 +102,8 @@ impl Dispatcher {
 
 #[no_mangle]
 pub extern "C" fn capnp_init(recv: extern "C" fn(*const u8, usize)) -> *mut c_void {
-    let f = move |resp: ::error::Result<Resp>| {
-        let bytes = resp.unwrap().to_bytes().unwrap();
+    let f = move |resp: Resp| {
+        let bytes = resp.to_bytes().unwrap();
         recv(bytes.as_ptr(), bytes.len())
     };
     let dispatcher = Box::new(Dispatcher::new(f));
@@ -155,9 +164,9 @@ pub mod jni {
     }
 
     impl DispatcherCallback for Context {
-        fn call(&mut self, r: Result<Resp>) {
+        fn call(&mut self, r: Resp) {
             with_attached_thread(self.vm, |env| {
-                let mut result = r.unwrap().to_bytes().unwrap();
+                let mut result = r.to_bytes().unwrap();
                 let byte_buffer = env.new_direct_byte_buffer(&mut result).unwrap();
                 let byte_buffer_obj = JValue::Object(*byte_buffer);
 
@@ -223,7 +232,7 @@ mod tests {
     fn test_encode() {
         let resp = Resp {
             id: 228,
-            kind: RespKind::SolverResult { solution: "hello world".to_string() },
+            kind: Ok(RespKind::SolverResult { solution: "hello world".to_string() }),
         };
         let _bytes = resp.to_bytes().unwrap();
         // TODO: assert_eq

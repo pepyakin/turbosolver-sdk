@@ -4,7 +4,6 @@ import android.util.SparseArray
 import io.reactivex.Completable
 import io.reactivex.Single
 import io.reactivex.SingleEmitter
-import me.pepyakin.turbosolver.LocalHttpTurboSolverFactory
 import me.pepyakin.turbosolver.TurboSolver
 import me.pepyakin.turbosolver.TurboSolverFactory
 import org.capnproto.MessageBuilder
@@ -13,6 +12,8 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
 import java.util.concurrent.atomic.AtomicInteger
+
+class CapnpTurboSolverException(errno: Int): Exception("err: $errno")
 
 class CapnpTurboSolver constructor(
         private val id: Int,
@@ -24,10 +25,12 @@ class CapnpTurboSolver constructor(
                     initSolveReq().apply {
                         id = this@CapnpTurboSolver.id
                     }
-                }.map { resp ->
-                    when (resp) {
-                        is Resp.SolveResult ->  resp.solution
-                        else -> error("unexpected variant! $resp")
+                }
+                .extractKind()
+                .map {
+                    when (it) {
+                        is RespKind.SolveResult -> it.solution
+                        else -> error("unexpected variant! $it")
                     }
                 }
     }
@@ -39,8 +42,9 @@ class CapnpTurboSolver constructor(
                         id = this@CapnpTurboSolver.id
                     }
                 }
+                .extractKind()
                 .doOnSuccess {
-                    assert(it is Resp.SolverDestroyed)
+                    assert(it is RespKind.SolverDestroyed)
                 }
                 .toCompletable()
     }
@@ -59,11 +63,12 @@ class CapnpTurboSolverFactory private constructor(
                 .dispatch {
                     initCreateSolverReq().setGrid(grid)
                 }
-                .map { resp ->
-                    when (resp) {
-                        is Resp.SolverCreated ->
-                            CapnpTurboSolver(resp.id, dispatcher)
-                        else -> error("unexpected variant! $resp")
+                .extractKind()
+                .map {
+                    when (it) {
+                        is RespKind.SolverCreated ->
+                            CapnpTurboSolver(it.id, dispatcher)
+                        else -> error("unexpected variant! $it")
                     }
                 }
     }
@@ -134,23 +139,47 @@ class Dispatcher {
     }
 }
 
+fun Single<Resp>.extractKind(): Single<RespKind> = flatMap { resp ->
+    when (resp) {
+        is Resp.Ok -> Single.just(resp.respKind)
+        is Resp.Errno -> Single.error(CapnpTurboSolverException(resp.errno))
+    }
+}
+
 sealed class Resp {
     companion object {
         fun fromReader(reader: Api.Resp.Reader): Resp = when (reader.which()!!) {
-            Api.Resp.Which.CREATE_SOLVER_RESP ->
-                Resp.SolverCreated(reader.createSolverResp.id)
+            Api.Resp.Which.SUCCESS ->
+                Resp.Ok(RespKind.fromReader(reader.success))
 
-            Api.Resp.Which.SOLVE_RESP ->
-                Resp.SolveResult(reader.solveResp.solution.toString())
-
-            Api.Resp.Which.DESTROY_RESP ->
-                Resp.SolverDestroyed
+            Api.Resp.Which.ERRNO ->
+                Resp.Errno(reader.errno)
 
             Api.Resp.Which._NOT_IN_SCHEMA -> error("variant not in the schema")
         }
     }
 
-    data class SolverCreated(val id: Int): Resp()
-    data class SolveResult(val solution: String): Resp()
-    object SolverDestroyed: Resp()
+    data class Ok(val respKind: RespKind): Resp()
+    data class Errno(val errno: Int): Resp()
+}
+
+sealed class RespKind {
+    companion object {
+        fun fromReader(reader: Api.SuccessfulResponse.Reader): RespKind = when (reader.which()!!) {
+            Api.SuccessfulResponse.Which.CREATE_SOLVER_RESP ->
+                RespKind.SolverCreated(reader.createSolverResp.id)
+
+            Api.SuccessfulResponse.Which.SOLVE_RESP ->
+                RespKind.SolveResult(reader.solveResp.solution.toString())
+
+            Api.SuccessfulResponse.Which.DESTROY_RESP ->
+                RespKind.SolverDestroyed
+
+            Api.SuccessfulResponse.Which._NOT_IN_SCHEMA -> error("variant not in the schema")
+        }
+    }
+
+    data class SolverCreated(val id: Int): RespKind()
+    data class SolveResult(val solution: String): RespKind()
+    object SolverDestroyed: RespKind()
 }

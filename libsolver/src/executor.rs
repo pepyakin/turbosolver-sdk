@@ -5,26 +5,30 @@ use std::thread;
 use context::Context;
 use error::*;
 
-fn handle_req(req: Req, ctx: &mut Context) -> Result<Resp> {
-    let resp_kind = match req.kind {
-        ReqKind::CreateSolver { grid } => {
-            let id = ctx.new_solver(&grid)?;
-            RespKind::SolverCreated { id }
-        }
-        ReqKind::Solve { id } => {
-            let solution = ctx.solve(id)?;
-            RespKind::SolverResult { solution }
-        }
-        ReqKind::Destroy { id } => {
-            ctx.destroy(id)?;
-            RespKind::Destroyed
-        }
-    };
+fn handle_req(req: Req, ctx: &mut Context) -> Resp {
+    fn handle(req_kind: ReqKind, ctx: &mut Context) -> Result<RespKind> {
+        let resp_kind = match req_kind {
+            ReqKind::CreateSolver { grid } => {
+                let id = ctx.new_solver(&grid)?;
+                RespKind::SolverCreated { id }
+            }
+            ReqKind::Solve { id } => {
+                let solution = ctx.solve(id)?;
+                RespKind::SolverResult { solution }
+            }
+            ReqKind::Destroy { id } => {
+                ctx.destroy(id)?;
+                RespKind::Destroyed
+            }
+        };
+        Ok(resp_kind)
+    }
 
-    Ok(Resp {
+    let resp_kind = handle(req.kind, ctx);
+    Resp {
         id: req.id,
         kind: resp_kind,
-    })
+    }
 }
 
 pub struct Executor {
@@ -32,7 +36,7 @@ pub struct Executor {
 }
 
 impl Executor {
-    pub fn new<F: FnMut(Result<Resp>) + Send + 'static>(recv: F) -> Executor {
+    pub fn new<F: FnMut(Resp) + Send + 'static>(recv: F) -> Executor {
         let (tx, rx) = channel();
         let _ = thread::spawn(move || {
             let mut recv = recv;
@@ -51,26 +55,22 @@ impl Executor {
     }
 }
 
-#[derive(Clone)]
 pub struct Req {
     pub id: usize,
     pub kind: ReqKind,
 }
 
-#[derive(Clone)]
 pub enum ReqKind {
     CreateSolver { grid: String },
     Solve { id: usize },
     Destroy { id: usize },
 }
 
-#[derive(Clone)]
 pub struct Resp {
     pub id: usize,
-    pub kind: RespKind,
+    pub kind: Result<RespKind>,
 }
 
-#[derive(Clone)]
 pub enum RespKind {
     SolverCreated { id: usize },
     SolverResult { solution: String },

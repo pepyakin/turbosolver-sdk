@@ -16,9 +16,16 @@ struct Req {
 struct Resp {
     id @0 :UInt32;
     union {
-        createSolverResp @1 :CreateSolverResp;
-        solveResp @2 :SolveResp;
-        destroyResp @3 :Void;
+        errno @1 :UInt32;
+        success @2 :SuccessfulResponse;
+    }
+}
+
+struct SuccessfulResponse {
+    union {
+        createSolverResp @0 :CreateSolverResp;
+        solveResp @1 :SolveResp;
+        destroyResp @2 :Void;
     }
 }
 
