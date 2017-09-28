@@ -3,17 +3,43 @@ use rocket::{State, Response, Request};
 use rocket::response::Responder;
 use rocket::http::{Status, ContentType};
 use rocket_contrib::{Json, Value};
-use context::Context;
+use executor::{Executor, Req, ReqKind, Resp, RespKind};
+use std::sync::mpsc::{channel, Receiver};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
+use error::*;
 
-mod errors {
-    error_chain! {
-        links {
-            Context(::context::Error, ::context::ErrorKind);
-            Lib(::error::Error, ::error::ErrorKind);
-        }
-    }
+/// Synchronous wrapper around `Executor`.
+///
+/// Allows to use `Executor` as if it was fully synchronous.
+struct SyncExecutor {
+    executor: Executor,
+    receiver: Receiver<Result<Resp>>,
+    next_msg_id: AtomicUsize,
 }
 
+impl SyncExecutor {
+    fn new() -> SyncExecutor {
+        let (tx, rx) = channel();
+        let executor = Executor::new(move |resp| { tx.send(resp).unwrap(); });
+        SyncExecutor {
+            executor,
+            receiver: rx,
+            next_msg_id: AtomicUsize::new(0),
+        }
+    }
+
+    fn send_sync(&mut self, req_kind: ReqKind) -> Result<RespKind> {
+        let msg_id = self.next_msg_id.fetch_add(1, Ordering::SeqCst);
+        self.executor.send(Req {
+            id: msg_id,
+            kind: req_kind,
+        });
+        let resp = self.receiver.recv().unwrap()?;
+        assert_eq!(msg_id, resp.id);
+        Ok(resp.kind)
+    }
+}
 
 #[derive(Deserialize)]
 struct CreateSolverReq {
@@ -21,8 +47,13 @@ struct CreateSolverReq {
 }
 
 #[post("/", data = "<req>")]
-fn create(req: Json<CreateSolverReq>, ctx: State<Context>) -> Result<Json<Value>, errors::Error> {
-    let solver_id = ctx.new_solver(&req.grid)?;
+fn create(req: Json<CreateSolverReq>, ctx: State<Mutex<SyncExecutor>>) -> Result<Json<Value>> {
+    let mut sync_exec = ctx.lock().unwrap();
+    let req = ReqKind::CreateSolver { grid: req.grid.clone() };
+    let solver_id = match sync_exec.send_sync(req)? {
+        RespKind::SolverCreated { id } => id,
+        _ => panic!("Unexpected variant!"),
+    };
     let resp = Json(json!({
         "id": solver_id as u32
     }));
@@ -30,8 +61,13 @@ fn create(req: Json<CreateSolverReq>, ctx: State<Context>) -> Result<Json<Value>
 }
 
 #[get("/<id>/solution")]
-fn solution(id: usize, ctx: State<Context>) -> Result<Json<Value>, errors::Error> {
-    let solution = ctx.solve(id)?;
+fn solution(id: usize, ctx: State<Mutex<SyncExecutor>>) -> Result<Json<Value>> {
+    let mut sync_exec = ctx.lock().unwrap();
+    let req = ReqKind::Solve { id };
+    let solution = match sync_exec.send_sync(req)? {
+        RespKind::SolverResult { solution } => solution,
+        _ => panic!("Unexpected variant!"),
+    };
     let resp = Json(json!({
         "solution": solution
     }));
@@ -39,12 +75,18 @@ fn solution(id: usize, ctx: State<Context>) -> Result<Json<Value>, errors::Error
 }
 
 #[delete("/<id>")]
-fn delete(id: usize, ctx: State<Context>) -> Result<(), errors::Error> {
-    Ok(ctx.destroy(id)?)
+fn delete(id: usize, ctx: State<Mutex<SyncExecutor>>) -> Result<()> {
+    let mut sync_exec = ctx.lock().unwrap();
+    let req = ReqKind::Destroy { id };
+    match sync_exec.send_sync(req)? {
+        RespKind::Destroyed => {}
+        _ => panic!("Unexpected variant!"),
+    };
+    Ok(())
 }
 
-impl<'a> Responder<'a> for errors::Error {
-    fn respond_to(self, _: &Request) -> Result<Response<'static>, Status> {
+impl<'a> Responder<'a> for Error {
+    fn respond_to(self, _: &Request) -> ::std::result::Result<Response<'static>, Status> {
         use std::io::Cursor;
 
         let description = self.description();
@@ -62,8 +104,8 @@ impl<'a> Responder<'a> for errors::Error {
 }
 
 fn create_rocket() -> rocket::Rocket {
-    let ctx = Context::new();
-    rocket::ignite().manage(ctx).mount(
+    let sync_exec = Mutex::new(SyncExecutor::new());
+    rocket::ignite().manage(sync_exec).mount(
         "/",
         routes![
             create,
@@ -93,7 +135,7 @@ pub mod jni {
 
     #[no_mangle]
     pub extern "C" fn Java_me_pepyakin_turbosolver_LocalHttpTurboSolverFactory_deploy(
-        env: JNIEnv,
+        _env: JNIEnv,
         _: JClass,
     ) {
         http_deploy();

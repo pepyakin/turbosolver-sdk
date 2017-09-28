@@ -3,20 +3,8 @@ use std::io::BufReader;
 use std::os::raw::c_void;
 use capnp::serialize;
 use capnp::message::ReaderOptions;
-use self::errors::*;
 use executor::{Executor, Req, ReqKind, Resp, RespKind};
-
-mod errors {
-    error_chain!{
-        links {
-            Context(::context::Error, ::context::ErrorKind);
-        }
-        foreign_links {
-            Io(::std::io::Error);
-            Capnp(::capnp::Error);
-        }
-    }
-}
+use error::*;
 
 impl Req {
     fn from_bytes(bytes: &[u8]) -> Result<Req> {
@@ -60,11 +48,9 @@ impl Resp {
                     let mut resp = resp_builder.borrow().init_create_solver_resp();
                     resp.set_id(id as u32);
                 }
-                RespKind::SolverResult { solution } => {
+                RespKind::SolverResult { ref solution } => {
                     let mut resp = resp_builder.borrow().init_solve_resp();
-                    if let Some(ref solution) = solution {
-                        resp.set_solution(solution);
-                    }
+                    resp.set_solution(solution);
                 }
                 RespKind::Destroyed => {
                     resp_builder.borrow().set_destroy_resp(());
@@ -80,21 +66,17 @@ impl Resp {
 }
 
 struct Dispatcher {
-    recv: extern "C" fn(*const u8, usize),
     executor: Executor,
 }
 
 impl Dispatcher {
     fn new(recv: extern "C" fn(*const u8, usize)) -> Dispatcher {
-        let f = move |resp: ::context::Result<Resp>| {
+        let f = move |resp: ::error::Result<Resp>| {
             let bytes = resp.unwrap().to_bytes().unwrap();
             recv(bytes.as_ptr(), bytes.len())
         };
 
-        Dispatcher {
-            recv,
-            executor: Executor::new(f),
-        }
+        Dispatcher { executor: Executor::new(f) }
     }
 
     fn dispatch(&mut self, msg: Vec<u8>) {
@@ -128,7 +110,7 @@ mod tests {
     fn test_encode() {
         let resp = Resp {
             id: 228,
-            kind: RespKind::SolverResult { solution: Some("hello world".to_string()) },
+            kind: RespKind::SolverResult { solution: "hello world".to_string() },
         };
         let _bytes = resp.to_bytes().unwrap();
         // TODO: assert_eq

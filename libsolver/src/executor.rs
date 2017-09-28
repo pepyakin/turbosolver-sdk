@@ -3,7 +3,7 @@
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use context::Context;
-use context::*;
+use error::*;
 
 fn handle_req(req: Req, ctx: &mut Context) -> Result<Resp> {
     let resp_kind = match req.kind {
@@ -12,7 +12,7 @@ fn handle_req(req: Req, ctx: &mut Context) -> Result<Resp> {
             RespKind::SolverCreated { id }
         }
         ReqKind::Solve { id } => {
-            let solution = ctx.solve(id).ok();
+            let solution = ctx.solve(id)?;
             RespKind::SolverResult { solution }
         }
         ReqKind::Destroy { id } => {
@@ -73,6 +73,6 @@ pub struct Resp {
 #[derive(Clone)]
 pub enum RespKind {
     SolverCreated { id: usize },
-    SolverResult { solution: Option<String> },
+    SolverResult { solution: String },
     Destroyed,
 }
