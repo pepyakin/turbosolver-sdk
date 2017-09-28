@@ -22,9 +22,9 @@ impl Solver {
     }
 }
 
-/// Wrapper type of sudoku::ParseError.
+/// Wrapper type of `sudoku::ParseError`.
 ///
-/// It is needed because sudoku::ParseError doesn't implement Error trait.
+/// It is needed because `sudoku::ParseError` doesn't implement `Error` trait.
 #[derive(Clone, Debug)]
 pub struct ParseError(self::sudoku::ParseError);
 

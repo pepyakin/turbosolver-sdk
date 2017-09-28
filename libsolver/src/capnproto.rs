@@ -38,7 +38,7 @@ impl Req {
 }
 
 impl Resp {
-    fn to_bytes(self) -> Vec<u8> {
+    fn into_bytes(self) -> Vec<u8> {
         let mut message = ::capnp::message::Builder::new_default();
         {
             let mut resp_builder = message.init_root::<api_capnp::resp::Builder>();
@@ -77,7 +77,7 @@ impl Resp {
 #[no_mangle]
 pub extern "C" fn capnp_init(recv: extern "C" fn(*const u8, usize)) -> *mut c_void {
     let f = move |resp: Resp| {
-        let bytes = resp.to_bytes();
+        let bytes = resp.into_bytes();
         recv(bytes.as_ptr(), bytes.len())
     };
     let dispatcher = Box::new(Executor::new(f));
@@ -91,7 +91,7 @@ pub extern "C" fn capnp_send(this: *mut c_void, msg: *const u8, msg_len: usize) 
         let this = this as *mut Executor;
         let executor = this.as_mut().expect("`this` shouldn't be null");
         let msg = slice::from_raw_parts(msg, msg_len);
-        let req = Req::from_bytes(&msg).expect("wrong schema?");
+        let req = Req::from_bytes(msg).expect("wrong schema?");
         executor.send(req);
     }
 }
@@ -120,7 +120,7 @@ pub mod jni {
 
     impl ExecutorCallback for Context {
         fn call(&mut self, r: Resp) {
-            let mut result_bytes = r.to_bytes();
+            let mut result_bytes = r.into_bytes();
 
             with_attached_thread(self.vm, |env| {
                 let byte_buf = env.new_direct_byte_buffer(&mut result_bytes).unwrap();
@@ -226,7 +226,7 @@ mod tests {
                 solution: "hello world".to_string(),
             }),
         };
-        let _bytes = resp.to_bytes();
+        let _bytes = resp.into_bytes();
         // TODO: assert_eq
     }
 }
