@@ -1,5 +1,9 @@
 @0xe7f29aeaaa98259c;
 
+using Java = import "/capnp/java.capnp";
+$Java.package("me.pepyakin.turbosolver.capnp");
+$Java.outerClassname("Api");
+
 struct Req {
     id @0 :UInt32;
     union {
