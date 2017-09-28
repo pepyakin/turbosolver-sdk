@@ -29,31 +29,22 @@ impl Req {
         let kind = match req_root.which() {
             Ok(CreateSolverReq(req)) => {
                 let grid = req?.get_grid()?.to_string();
-                ReqKind::CreateSolver {
-                    grid
-                }
-            },
+                ReqKind::CreateSolver { grid }
+            }
             Ok(SolveReq(req)) => {
                 let id = req?.get_id() as usize;
-                ReqKind::Solve {
-                    id
-                }
-            },
+                ReqKind::Solve { id }
+            }
             Ok(DestroyReq(req)) => {
                 let id = req?.get_id() as usize;
-                ReqKind::Destroy {
-                    id
-                }
-            },
-            _ => panic!("unsupported variant. Is schema up to date?")
+                ReqKind::Destroy { id }
+            }
+            _ => panic!("unsupported variant. Is schema up to date?"),
         };
 
         let id = req_root.get_id() as usize;
 
-        Ok(Req {
-            id,
-            kind
-        })
+        Ok(Req { id, kind })
     }
 }
 
@@ -68,16 +59,16 @@ impl Resp {
                 RespKind::SolverCreated { id } => {
                     let mut resp = resp_builder.borrow().init_create_solver_resp();
                     resp.set_id(id as u32);
-                },
+                }
                 RespKind::SolverResult { solution } => {
                     let mut resp = resp_builder.borrow().init_solve_resp();
                     if let Some(ref solution) = solution {
                         resp.set_solution(solution);
                     }
-                },
+                }
                 RespKind::Destroyed => {
                     resp_builder.borrow().set_destroy_resp(());
-                },
+                }
             }
         }
 
@@ -137,9 +128,7 @@ mod tests {
     fn test_encode() {
         let resp = Resp {
             id: 228,
-            kind: RespKind::SolverResult {
-                solution: Some("hello world".to_string())
-            }
+            kind: RespKind::SolverResult { solution: Some("hello world".to_string()) },
         };
         let _bytes = resp.to_bytes().unwrap();
         // TODO: assert_eq

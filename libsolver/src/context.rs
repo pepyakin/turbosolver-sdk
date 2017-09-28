@@ -32,9 +32,7 @@ impl Context {
     }
 
     pub fn new_solver(&self, grid: &str) -> Result<usize> {
-        let new_solver = Solver::from_str(&grid).chain_err(
-            || ErrorKind::BadGrid,
-        )?;
+        let new_solver = Solver::from_str(&grid).chain_err(|| ErrorKind::BadGrid)?;
         let solver_id = self.next_id.fetch_add(1, Ordering::SeqCst);
         let mut solvers = self.solvers.lock().unwrap();
         solvers.insert(solver_id, new_solver);

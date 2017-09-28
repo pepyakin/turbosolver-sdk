@@ -10,11 +10,11 @@ fn handle_req(req: Req, ctx: &mut Context) -> Result<Resp> {
         ReqKind::CreateSolver { grid } => {
             let id = ctx.new_solver(&grid)?;
             RespKind::SolverCreated { id }
-        },
+        }
         ReqKind::Solve { id } => {
             let solution = ctx.solve(id).ok();
             RespKind::SolverResult { solution }
-        },
+        }
         ReqKind::Destroy { id } => {
             ctx.destroy(id)?;
             RespKind::Destroyed
@@ -43,9 +43,7 @@ impl Executor {
                 recv(resp)
             }
         });
-        Executor {
-            sender: tx
-        }
+        Executor { sender: tx }
     }
 
     pub fn send(&self, req: Req) {
@@ -56,35 +54,25 @@ impl Executor {
 #[derive(Clone)]
 pub struct Req {
     pub id: usize,
-    pub kind: ReqKind
+    pub kind: ReqKind,
 }
 
 #[derive(Clone)]
 pub enum ReqKind {
-    CreateSolver {
-        grid: String,
-    },
-    Solve {
-        id: usize,
-    },
-    Destroy {
-        id: usize,
-    },
+    CreateSolver { grid: String },
+    Solve { id: usize },
+    Destroy { id: usize },
 }
 
 #[derive(Clone)]
 pub struct Resp {
     pub id: usize,
-    pub kind: RespKind
+    pub kind: RespKind,
 }
 
 #[derive(Clone)]
 pub enum RespKind {
-    SolverCreated {
-        id: usize,
-    },
-    SolverResult {
-        solution: Option<String>
-    },
+    SolverCreated { id: usize },
+    SolverResult { solution: Option<String> },
     Destroyed,
 }
