@@ -57,6 +57,7 @@ class LocalHttpTurboSolverFactory(
             }).start()
         }
 
+        @JvmStatic
         fun create(port: Int = 8000): LocalHttpTurboSolverFactory {
             val retrofit = Retrofit.Builder()
                     .baseUrl("http://localhost:$port")

@@ -54,6 +54,7 @@ class CapnpTurboSolverFactory private constructor(
         private val dispatcher: Dispatcher): TurboSolverFactory {
 
     companion object {
+        @JvmStatic
         fun create(): CapnpTurboSolverFactory =
                 CapnpTurboSolverFactory(Dispatcher())
     }
@@ -112,12 +113,14 @@ class Dispatcher {
             Serialize.write(out, message)
             val bytes = baos.toByteArray()
 
-            // Send the bytes array to a backend.
-            capnp_send(executorPtr, bytes)
-
+            // Put emitter onto stash sending msg. It is important to
+            // do it before sending message to the backend.
             synchronized(emitterStash) {
                 emitterStash.put(reqId, emitter)
             }
+
+            // Send the bytes array to the backend.
+            capnp_send(executorPtr, bytes)
         }
     }
 
@@ -127,7 +130,7 @@ class Dispatcher {
         val respReader = Serialize.read(data).getRoot(Api.Resp.factory)
         val resp = Resp.fromReader(respReader)
 
-        // Get emitter out under lock.
+        // Get emitter out under the lock.
         val emitter = synchronized(emitterStash) {
             val e = emitterStash[respReader.id]
             emitterStash.remove(respReader.id)
