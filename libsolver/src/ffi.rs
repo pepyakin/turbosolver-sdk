@@ -50,24 +50,3 @@ pub extern "C" fn solver_destroy(solver: *mut Solver) {
         let _ = Box::from_raw(solver);
     }
 }
-
-#[no_mangle]
-pub extern "C" fn http_deploy() {
-    use http;
-    http::deploy();
-}
-
-#[cfg(target_os="android")]
-#[allow(non_snake_case)]
-pub mod jni {
-    extern crate jni;
-
-    use super::*;
-    use self::jni::JNIEnv;
-    use self::jni::objects::{JClass};
-
-    #[no_mangle]
-    pub extern "C" fn Java_me_pepyakin_turbosolver_LocalHttpTurboSolverFactory_deploy(env: JNIEnv, _: JClass) {
-        http_deploy();
-    }
-}

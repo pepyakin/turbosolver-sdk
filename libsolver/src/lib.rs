@@ -6,13 +6,21 @@ extern crate rocket;
 extern crate rocket_contrib;
 #[macro_use]
 extern crate serde_derive;
-
 #[macro_use]
 extern crate error_chain;
+extern crate capnp;
+extern crate futures;
+extern crate futures_cpupool;
 
-// This mod must be public in order to be exported.
+// These mods must be public in order to be exported.
 pub mod ffi;
+pub mod http;
+pub mod capnproto;
 
 mod error;
 mod solver;
-mod http;
+mod context;
+
+pub mod api_capnp {
+    include!(concat!(env!("OUT_DIR"), "/api_capnp.rs"));
+}

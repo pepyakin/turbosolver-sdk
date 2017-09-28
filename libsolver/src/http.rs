@@ -8,30 +8,17 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 use std::mem;
 use solver::Solver;
+use context::Context;
 
 mod errors {
     error_chain! {
         links {
+            Context(::context::Error, ::context::ErrorKind);
             Lib(::error::Error, ::error::ErrorKind);
-        }
-        errors {
-            BadGrid {
-                description("grid couldn't be parsed")
-            }
-            NotAvailable(id: usize) {
-                description("solver with specified id not available at the moment or doesn't exist")
-            }
-            SolutionNotFound {
-                description("solution for the specified grid couldn't be found")
-            }
         }
     }
 }
 
-struct Context {
-    next_id: AtomicUsize,
-    solvers: Mutex<HashMap<usize, Solver>>,
-}
 
 #[derive(Deserialize)]
 struct CreateSolverReq {
@@ -40,16 +27,7 @@ struct CreateSolverReq {
 
 #[post("/", data = "<req>")]
 fn create(req: Json<CreateSolverReq>, ctx: State<Context>) -> Result<Json<Value>, errors::Error> {
-    use self::errors::ResultExt;
-
-    let new_solver = Solver::from_str(&req.grid).chain_err(
-        || errors::ErrorKind::BadGrid,
-    )?;
-
-    let solver_id = ctx.next_id.fetch_add(1, Ordering::SeqCst);
-    let mut solvers = ctx.solvers.lock().unwrap();
-    solvers.insert(solver_id, new_solver);
-
+    let solver_id = ctx.new_solver(&req.grid)?;
     let resp = Json(json!({
         "id": solver_id as u32
     }));
@@ -58,39 +36,16 @@ fn create(req: Json<CreateSolverReq>, ctx: State<Context>) -> Result<Json<Value>
 
 #[get("/<id>/solution")]
 fn solution(id: usize, ctx: State<Context>) -> Result<Json<Value>, errors::Error> {
-    let mut solver = {
-        let mut solvers = ctx.solvers.lock().unwrap();
-        match solvers.remove(&id) {
-            Some(solver) => solver,
-            None => bail!(errors::ErrorKind::NotAvailable(id)),
-        }
-    };
-
-    let maybe_solution = solver.solve();
-
-    let mut solvers = ctx.solvers.lock().unwrap();
-    solvers.insert(id, solver);
-
-    if let Some(solution) = maybe_solution {
-        let resp = Json(json!({
-            "solution": solution
-        }));
-        Ok(resp)
-    } else {
-        bail!(errors::ErrorKind::SolutionNotFound);
-    }
+    let solution = ctx.solve(id)?;
+    let resp = Json(json!({
+        "solution": solution
+    }));
+    Ok(resp)
 }
 
 #[delete("/<id>")]
 fn delete(id: usize, ctx: State<Context>) -> Result<(), errors::Error> {
-    let mut solvers = ctx.solvers.lock().unwrap();
-    match solvers.remove(&id) {
-        Some(solver) => {
-            mem::drop(solver);
-            Ok(())
-        }
-        None => bail!(errors::ErrorKind::NotAvailable(id)),
-    }
+    Ok(ctx.destroy(id)?)
 }
 
 impl<'a> Responder<'a> for errors::Error {
@@ -112,10 +67,7 @@ impl<'a> Responder<'a> for errors::Error {
 }
 
 fn create_rocket() -> rocket::Rocket {
-    let ctx = Context {
-        next_id: AtomicUsize::new(0),
-        solvers: Mutex::new(HashMap::new()),
-    };
+    let ctx = Context::new();
     rocket::ignite().manage(ctx).mount(
         "/",
         routes![
@@ -129,9 +81,28 @@ fn create_rocket() -> rocket::Rocket {
 /// Deploy and run http server instance.
 ///
 /// Be aware! This will block the calling thread.
-pub fn deploy() {
+#[no_mangle]
+pub extern "C" fn http_deploy() {
     let rocket = create_rocket();
     rocket.launch();
+}
+
+#[cfg(target_os = "android")]
+#[allow(non_snake_case)]
+pub mod jni {
+    extern crate jni;
+
+    use super::*;
+    use self::jni::JNIEnv;
+    use self::jni::objects::JClass;
+
+    #[no_mangle]
+    pub extern "C" fn Java_me_pepyakin_turbosolver_LocalHttpTurboSolverFactory_deploy(
+        env: JNIEnv,
+        _: JClass,
+    ) {
+        http_deploy();
+    }
 }
 
 #[cfg(test)]
