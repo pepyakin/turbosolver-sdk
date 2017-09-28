@@ -57,7 +57,7 @@ class LocalHttpTurboSolverFactory(
             }).start()
         }
 
-        fun create(port: Int): LocalHttpTurboSolverFactory {
+        fun create(port: Int = 8000): LocalHttpTurboSolverFactory {
             val retrofit = Retrofit.Builder()
                     .baseUrl("http://localhost:$port")
                     .addCallAdapterFactory(RxJava2CallAdapterFactory.create())

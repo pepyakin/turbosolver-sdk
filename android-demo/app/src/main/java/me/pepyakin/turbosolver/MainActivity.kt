@@ -1,37 +1,76 @@
 package me.pepyakin.turbosolver
 
+import android.annotation.SuppressLint
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
 import android.widget.TextView
 import io.reactivex.Single
-import io.reactivex.SingleSource
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import me.pepyakin.turbosolver.capnp.CapnpTurboSolverFactory
-
-private val sudokuGrid = """___|2__|_63
-3__|__5|4_1
-__1|__3|98_
-___|___|_9_
-___|538|___
-_3_|___|___
-_26|3__|5__
-5_3|7__|__8
-47_|__1|___"""
 
 class MainActivity : AppCompatActivity() {
 
     private var subscription: Disposable? = null
 
+    private val generateBtn by lazy {
+        findViewById(R.id.main_generate_btn) as Button
+    }
+
+    private val puzzleTextView by lazy {
+        findViewById(R.id.main_puzzle_textview) as TextView
+    }
+
+    private val solutionTextView by lazy {
+        findViewById(R.id.main_solution_textview) as TextView
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val textView = findViewById(R.id.main_text) as TextView
+        generateBtn.setOnClickListener {
+            generateRandomSudoku()
+        }
+    }
 
-        val factory = CapnpTurboSolverFactory.create()
-        val solverFuture = factory.create(sudokuGrid)
-        subscription = solverFuture
+    @SuppressLint("SetTextI18n")
+    private fun generateRandomSudoku() {
+        subscription?.dispose()
+
+        subscription = generateSudoku()
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe {
+                    puzzleTextView.text = "Generating..."
+                    solutionTextView.text = "Waiting for generated sudoku..."
+                }
+                .doOnSuccess { sudoku ->
+                    puzzleTextView.text = sudoku
+                    solutionTextView.text = "Solving..."
+                }
+                .observeOn(Schedulers.computation())
+                .flatMap { sudoku ->
+                    solveSudoku(sudoku)
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { solution, error ->
+                    solutionTextView.text = if (solution != null) {
+                        "Solution:\n" + solution
+                    } else {
+                        "Error:\n" + error
+                    }
+                }
+    }
+
+    private fun solveSudoku(grid: String): Single<String> {
+        // val factory = CapnpTurboSolverFactory.create()
+        val factory = LocalHttpTurboSolverFactory.create()
+
+        val solverFuture = factory.create(grid)
+        return solverFuture
                 .flatMap { solver ->
                     val futureSolution = solver.solve()
 
@@ -39,14 +78,6 @@ class MainActivity : AppCompatActivity() {
                         solver.destroy()
                                 .toSingle { Unit }
                                 .map { solution }
-                    }
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { solution, error ->
-                    textView.text = if (solution != null) {
-                        "Solution:\n" + solution
-                    } else {
-                        "Error:\n" + error
                     }
                 }
     }
