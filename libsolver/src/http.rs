@@ -3,11 +3,6 @@ use rocket::{State, Response, Request};
 use rocket::response::Responder;
 use rocket::http::{Status, ContentType};
 use rocket_contrib::{Json, Value};
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex;
-use std::mem;
-use solver::Solver;
 use context::Context;
 
 mod errors {
@@ -182,7 +177,9 @@ _26|3__|5__
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(
             response.body_string().unwrap(),
-            solution
+            json!({
+                    "solution": solution
+                }).to_string()
         );
     }
 

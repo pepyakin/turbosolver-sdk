@@ -9,8 +9,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate error_chain;
 extern crate capnp;
-extern crate futures;
-extern crate futures_cpupool;
 
 // These mods must be public in order to be exported.
 pub mod ffi;
@@ -20,6 +18,7 @@ pub mod capnproto;
 mod error;
 mod solver;
 mod context;
+mod executor;
 
 pub mod api_capnp {
     include!(concat!(env!("OUT_DIR"), "/api_capnp.rs"));

@@ -1,13 +1,10 @@
 
 use std::io::BufReader;
 use std::os::raw::c_void;
-use std::sync::Arc;
-use context::Context;
-use capnp::serialize_packed;
+use capnp::serialize;
 use capnp::message::ReaderOptions;
-use futures_cpupool::CpuPool;
-use futures::future::*;
 use self::errors::*;
+use executor::{Executor, Req, ReqKind, Resp, RespKind};
 
 mod errors {
     error_chain!{
@@ -15,21 +12,10 @@ mod errors {
             Context(::context::Error, ::context::ErrorKind);
         }
         foreign_links {
+            Io(::std::io::Error);
             Capnp(::capnp::Error);
         }
     }
-}
-
-enum Req {
-    CreateSolver {
-        grid: String,
-    },
-    Solve {
-        id: usize,
-    },
-    Destroy {
-        id: usize,
-    },
 }
 
 impl Req {
@@ -37,109 +23,97 @@ impl Req {
         use api_capnp::req::Which::*;
 
         let mut reader = BufReader::new(&bytes[..]);
-        let msg = serialize_packed::read_message(&mut reader, ReaderOptions::new())?;
+        let msg = serialize::read_message(&mut reader, ReaderOptions::new())?;
         let req_root = msg.get_root::<::api_capnp::req::Reader>()?;
 
-        let req = match req_root.which() {
+        let kind = match req_root.which() {
             Ok(CreateSolverReq(req)) => {
                 let grid = req?.get_grid()?.to_string();
-                Req::CreateSolver {
+                ReqKind::CreateSolver {
                     grid
                 }
             },
             Ok(SolveReq(req)) => {
                 let id = req?.get_id() as usize;
-                Req::Solve {
+                ReqKind::Solve {
                     id
                 }
             },
             Ok(DestroyReq(req)) => {
                 let id = req?.get_id() as usize;
-                Req::Destroy {
+                ReqKind::Destroy {
                     id
                 }
             },
             _ => panic!("unsupported variant. Is schema up to date?")
         };
 
-        Ok(req)
-    }
-}
+        let id = req_root.get_id() as usize;
 
-enum Resp {
-    SolverCreated {
-        id: usize,
-    },
-    SolverResult {
-        solution: Option<String>
-    },
-    Destroyed,
+        Ok(Req {
+            id,
+            kind
+        })
+    }
 }
 
 impl Resp {
     fn to_bytes(self) -> Result<Vec<u8>> {
         let mut message = ::capnp::message::Builder::new_default();
-        let req_builder = message.init_root::<::api_capnp::req::Builder>();
+        {
+            let mut resp_builder = message.init_root::<::api_capnp::resp::Builder>();
+            resp_builder.set_id(self.id as u32);
 
-        match self {
-            Resp::SolverCreated { id } => {
-            },
-            Resp::SolverResult { solution } => {
-
-            },
-            Resp::Destroyed => {
-            },
+            match self.kind {
+                RespKind::SolverCreated { id } => {
+                    let mut resp = resp_builder.borrow().init_create_solver_resp();
+                    resp.set_id(id as u32);
+                },
+                RespKind::SolverResult { solution } => {
+                    let mut resp = resp_builder.borrow().init_solve_resp();
+                    if let Some(ref solution) = solution {
+                        resp.set_solution(solution);
+                    }
+                },
+                RespKind::Destroyed => {
+                    resp_builder.borrow().set_destroy_resp(());
+                },
+            }
         }
 
-        panic!()
+        let mut bytes = Vec::new();
+        serialize::write_message(&mut bytes, &message)?;
+
+        Ok(bytes)
     }
 }
 
 struct Dispatcher {
-    recv: extern "C" fn(),
-    pool: CpuPool,
-    ctx: Arc<Context>,
-}
-
-fn dispatch_msg(msg: Vec<u8>, ctx: Arc<Context>) -> Result<Vec<u8>> {
-    let req = Req::from_bytes(&msg)?;
-    let resp = match req {
-        Req::CreateSolver { grid } => {
-            let id = ctx.new_solver(&grid)?;
-            Resp::SolverCreated { id }
-        },
-        Req::Solve { id } => {
-            let solution = ctx.solve(id).ok();
-            Resp::SolverResult { solution }
-        },
-        Req::Destroy { id } => {
-            ctx.destroy(id)?;
-            Resp::Destroyed
-        }
-    };
-
-    Ok(resp.to_bytes()?)
+    recv: extern "C" fn(*const u8, usize),
+    executor: Executor,
 }
 
 impl Dispatcher {
-    fn new(recv: extern "C" fn()) -> Dispatcher {
+    fn new(recv: extern "C" fn(*const u8, usize)) -> Dispatcher {
+        let f = move |resp: ::context::Result<Resp>| {
+            let bytes = resp.unwrap().to_bytes().unwrap();
+            recv(bytes.as_ptr(), bytes.len())
+        };
+
         Dispatcher {
             recv,
-            pool: CpuPool::new(1),
-            ctx: Arc::new(Context::new()),
+            executor: Executor::new(f),
         }
     }
 
     fn dispatch(&mut self, msg: Vec<u8>) {
-        let ctx = Arc::clone(&self.ctx);
-        let future = self.pool.spawn(lazy(move || {
-            result(dispatch_msg(msg, ctx))
-        }));
+        let req = Req::from_bytes(&msg).expect("wrong schema?");
+        self.executor.send(req);
     }
 }
 
 #[no_mangle]
-pub extern "C" fn capnp_init(recv: extern "C" fn()) -> *mut c_void {
+pub extern "C" fn capnp_init(recv: extern "C" fn(*const u8, usize)) -> *mut c_void {
     let dispatcher = Box::new(Dispatcher::new(recv));
     Box::into_raw(dispatcher) as *mut c_void
 }
@@ -152,5 +126,22 @@ pub extern "C" fn capnp_send(this: *mut c_void, msg: *const u8, msg_len: usize) 
         let dispatcher = this.as_mut().expect("this shouldn't be null");
         let msg = slice::from_raw_parts(msg, msg_len).to_vec();
         dispatcher.dispatch(msg);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode() {
+        let resp = Resp {
+            id: 228,
+            kind: RespKind::SolverResult {
+                solution: Some("hello world".to_string())
+            }
+        };
+        let _bytes = resp.to_bytes().unwrap();
+        // TODO: assert_eq
     }
 }

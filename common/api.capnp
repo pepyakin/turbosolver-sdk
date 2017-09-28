@@ -1,10 +1,20 @@
 @0xe7f29aeaaa98259c;
 
 struct Req {
+    id @0 :UInt32;
     union {
-        createSolverReq @0 :CreateSolverReq;
-        solveReq @1 :SolveReq;
-        destroyReq @2 :DestroyReq;
+        createSolverReq @1 :CreateSolverReq;
+        solveReq @2 :SolveReq;
+        destroyReq @3 :DestroyReq;
+    }
+}
+
+struct Resp {
+    id @0 :UInt32;
+    union {
+        createSolverResp @1 :CreateSolverResp;
+        solveResp @2 :SolveResp;
+        destroyResp @3 :Void;
     }
 }
 
@@ -27,3 +37,4 @@ struct SolveResp {
 struct DestroyReq {
     id @0 :UInt32;
 }
+
