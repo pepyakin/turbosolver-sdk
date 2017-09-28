@@ -10,9 +10,4 @@ error_chain! {
         Parse(::solver::ParseError);
         Capnp(::capnp::Error);
     }
-    errors {
-        SolutionNotFound {
-            description("solution for specified grid cannot be found")
-        }
-    }
 }

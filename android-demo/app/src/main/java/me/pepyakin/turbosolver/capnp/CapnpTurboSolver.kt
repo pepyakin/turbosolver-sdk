@@ -87,9 +87,9 @@ class Dispatcher {
         }
     }
 
-    private val dispatcherPtr: Long
+    private val executorPtr: Long
     init {
-        dispatcherPtr = capnp_init(this)
+        executorPtr = capnp_init(this)
     }
 
     private var nextId = AtomicInteger()
@@ -113,7 +113,7 @@ class Dispatcher {
             val bytes = baos.toByteArray()
 
             // Send the bytes array to a backend.
-            capnp_send(dispatcherPtr, bytes)
+            capnp_send(executorPtr, bytes)
 
             synchronized(emitterStash) {
                 emitterStash.put(reqId, emitter)
@@ -149,11 +149,11 @@ fun Single<Resp>.extractKind(): Single<RespKind> = flatMap { resp ->
 sealed class Resp {
     companion object {
         fun fromReader(reader: Api.Resp.Reader): Resp = when (reader.which()!!) {
-            Api.Resp.Which.SUCCESS ->
-                Resp.Ok(RespKind.fromReader(reader.success))
+            Api.Resp.Which.OK ->
+                Resp.Ok(RespKind.fromReader(reader.ok))
 
-            Api.Resp.Which.ERRNO ->
-                Resp.Errno(reader.errno)
+            Api.Resp.Which.ERR->
+                Resp.Errno(reader.err)
 
             Api.Resp.Which._NOT_IN_SCHEMA -> error("variant not in the schema")
         }
@@ -165,17 +165,17 @@ sealed class Resp {
 
 sealed class RespKind {
     companion object {
-        fun fromReader(reader: Api.SuccessfulResponse.Reader): RespKind = when (reader.which()!!) {
-            Api.SuccessfulResponse.Which.CREATE_SOLVER_RESP ->
+        fun fromReader(reader: Api.OkResp.Reader): RespKind = when (reader.which()!!) {
+            Api.OkResp.Which.CREATE_SOLVER_RESP ->
                 RespKind.SolverCreated(reader.createSolverResp.id)
 
-            Api.SuccessfulResponse.Which.SOLVE_RESP ->
+            Api.OkResp.Which.SOLVE_RESP ->
                 RespKind.SolveResult(reader.solveResp.solution.toString())
 
-            Api.SuccessfulResponse.Which.DESTROY_RESP ->
+            Api.OkResp.Which.DESTROY_RESP ->
                 RespKind.SolverDestroyed
 
-            Api.SuccessfulResponse.Which._NOT_IN_SCHEMA -> error("variant not in the schema")
+            Api.OkResp.Which._NOT_IN_SCHEMA -> error("variant not in the schema")
         }
     }
 

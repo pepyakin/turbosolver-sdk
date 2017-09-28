@@ -16,12 +16,12 @@ struct Req {
 struct Resp {
     id @0 :UInt32;
     union {
-        errno @1 :UInt32;
-        success @2 :SuccessfulResponse;
+        err @1 :UInt32;
+        ok @2 :OkResp;
     }
 }
 
-struct SuccessfulResponse {
+struct OkResp {
     union {
         createSolverResp @0 :CreateSolverResp;
         solveResp @1 :SolveResp;
@@ -33,19 +33,18 @@ struct CreateSolverReq {
     grid @0 :Text;
 }
 
-struct CreateSolverResp {
-    id @0 :UInt32;
-}
-
 struct SolveReq {
     id @0 :UInt32;
-}
-
-struct SolveResp {
-    solution @0 :Text;
 }
 
 struct DestroyReq {
     id @0 :UInt32;
 }
 
+struct CreateSolverResp {
+    id @0 :UInt32;
+}
+
+struct SolveResp {
+    solution @0 :Text;
+}

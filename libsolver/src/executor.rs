@@ -31,12 +31,22 @@ fn handle_req(req: Req, ctx: &mut Context) -> Resp {
     }
 }
 
+pub trait ExecutorCallback: Send {
+    fn call(&mut self, r: Resp);
+}
+
+impl<F: FnMut(Resp) + Send> ExecutorCallback for F {
+    fn call(&mut self, resp: Resp) {
+        self(resp)
+    }
+}
+
 pub struct Executor {
     sender: Sender<Req>,
 }
 
 impl Executor {
-    pub fn new<F: FnMut(Resp) + Send + 'static>(recv: F) -> Executor {
+    pub fn new<F: ExecutorCallback + 'static>(recv: F) -> Executor {
         let (tx, rx) = channel();
         let _ = thread::spawn(move || {
             let mut recv = recv;
@@ -44,7 +54,7 @@ impl Executor {
 
             for req in rx {
                 let resp = handle_req(req, &mut ctx);
-                recv(resp)
+                recv.call(resp);
             }
         });
         Executor { sender: tx }

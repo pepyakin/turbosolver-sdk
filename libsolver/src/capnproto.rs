@@ -5,6 +5,7 @@ use capnp::serialize;
 use capnp::message::ReaderOptions;
 use executor::{Executor, Req, ReqKind, Resp, RespKind};
 use error::*;
+use api_capnp;
 
 impl Req {
     fn from_bytes(bytes: &[u8]) -> Result<Req> {
@@ -12,7 +13,7 @@ impl Req {
 
         let mut reader = BufReader::new(&bytes[..]);
         let msg = serialize::read_message(&mut reader, ReaderOptions::new())?;
-        let req_root = msg.get_root::<::api_capnp::req::Reader>()?;
+        let req_root = msg.get_root::<api_capnp::req::Reader>()?;
 
         let kind = match req_root.which() {
             Ok(CreateSolverReq(req)) => {
@@ -37,76 +38,49 @@ impl Req {
 }
 
 impl Resp {
-    fn to_bytes(self) -> Result<Vec<u8>> {
+    fn to_bytes(self) -> Vec<u8> {
         let mut message = ::capnp::message::Builder::new_default();
         {
-            let mut resp_builder = message.init_root::<::api_capnp::resp::Builder>();
+            let mut resp_builder = message.init_root::<api_capnp::resp::Builder>();
             resp_builder.set_id(self.id as u32);
 
             match self.kind {
                 Ok(kind) => {
-                    let mut success = resp_builder.borrow().init_success();
-                        match kind {
+                    let mut ok_resp = resp_builder.borrow().init_ok();
+                    match kind {
                         RespKind::SolverCreated { id } => {
-                            let mut resp = success.borrow().init_create_solver_resp();
+                            let mut resp = ok_resp.borrow().init_create_solver_resp();
                             resp.set_id(id as u32);
                         }
                         RespKind::SolverResult { ref solution } => {
-                            let mut resp = success.borrow().init_solve_resp();
+                            let mut resp = ok_resp.borrow().init_solve_resp();
                             resp.set_solution(solution);
                         }
                         RespKind::Destroyed => {
-                            success.borrow().set_destroy_resp(());
+                            ok_resp.borrow().set_destroy_resp(());
                         }
                     }
                 }
                 Err(_e) => {
                     // TODO: turn _e into errno.
-                    resp_builder.set_errno(1);
+                    resp_builder.set_err(1);
                 }
             }
         }
 
         let mut bytes = Vec::new();
-        serialize::write_message(&mut bytes, &message)?;
-
-        Ok(bytes)
-    }
-}
-
-trait DispatcherCallback {
-    fn call(&mut self, r: Resp);
-}
-
-impl<F: FnMut(Resp)> DispatcherCallback for F {
-    fn call(&mut self, r: Resp) {
-        self(r)
-    }
-}
-
-struct Dispatcher {
-    executor: Executor,
-}
-
-impl Dispatcher {
-    fn new<F: DispatcherCallback + Send + 'static>(mut callback: F) -> Dispatcher {
-        let recv = move |resp| { callback.call(resp); };
-        Dispatcher { executor: Executor::new(recv) }
-    }
-
-    fn dispatch(&mut self, msg: &[u8]) {
-        let req = Req::from_bytes(&msg).expect("wrong schema?");
-        self.executor.send(req);
+        serialize::write_message(&mut bytes, &message).expect("write_message should succeed");
+        bytes
     }
 }
 
 #[no_mangle]
 pub extern "C" fn capnp_init(recv: extern "C" fn(*const u8, usize)) -> *mut c_void {
     let f = move |resp: Resp| {
-        let bytes = resp.to_bytes().unwrap();
+        let bytes = resp.to_bytes();
         recv(bytes.as_ptr(), bytes.len())
     };
-    let dispatcher = Box::new(Dispatcher::new(f));
+    let dispatcher = Box::new(Executor::new(f));
     Box::into_raw(dispatcher) as *mut c_void
 }
 
@@ -114,10 +88,11 @@ pub extern "C" fn capnp_init(recv: extern "C" fn(*const u8, usize)) -> *mut c_vo
 pub extern "C" fn capnp_send(this: *mut c_void, msg: *const u8, msg_len: usize) {
     use std::slice;
     unsafe {
-        let this = this as *mut Dispatcher;
-        let dispatcher = this.as_mut().expect("this shouldn't be null");
+        let this = this as *mut Executor;
+        let executor = this.as_mut().expect("`this` shouldn't be null");
         let msg = slice::from_raw_parts(msg, msg_len);
-        dispatcher.dispatch(msg);
+        let req = Req::from_bytes(&msg).expect("wrong schema?");
+        executor.send(req);
     }
 }
 
@@ -127,6 +102,8 @@ pub mod jni {
     extern crate jni;
 
     use super::*;
+    use executor::ExecutorCallback;
+
     use self::jni::JNIEnv;
     use self::jni::objects::{GlobalRef, JClass, JObject, JValue};
     use self::jni::sys::jlong;
@@ -141,13 +118,42 @@ pub mod jni {
         dispatcher_this: GlobalRef,
     }
 
+    impl ExecutorCallback for Context {
+        fn call(&mut self, r: Resp) {
+            let mut result_bytes = r.to_bytes();
+
+            with_attached_thread(self.vm, |env| {
+                let byte_buf = env.new_direct_byte_buffer(&mut result_bytes).unwrap();
+                let byte_buf_obj = JValue::Object(*byte_buf);
+
+                let dispatcher_this = self.dispatcher_this.as_obj();
+                env.call_method(
+                    dispatcher_this,
+                    "callback",
+                    "(Ljava/nio/ByteBuffer;)V",
+                    &[byte_buf_obj],
+                ).unwrap();
+            });
+        }
+    }
+
+    // It should be safe provided that we use JVM only via
+    // attached to the current thread JNIEnv.
     unsafe impl Send for Context {}
 
+    /// Attach JavaVM to the current thread, do the work and then detach.
     fn with_attached_thread<F: FnOnce(JNIEnv)>(vm: *mut JavaVM, f: F) {
         unsafe {
+            let attach_current_thread = (**vm).AttachCurrentThread.expect(
+                "JavaVM doesn't have AttachCurrentThread",
+            );
+            let detach_current_thread = (**vm).DetachCurrentThread.expect(
+                "JavaVM doesn't have DetachCurrentThread",
+            );
+
+            // Attach JavaVM to the current thread. This would provide
+            // JNIEnv for further use.
             let mut raw_env: *mut RawJNIEnv = ptr::null_mut();
-            let attach_current_thread = (**vm).AttachCurrentThread.unwrap();
-            let detach_current_thread = (**vm).DetachCurrentThread.unwrap();
             let result = attach_current_thread(
                 vm,
                 &mut raw_env as *mut *mut _ as *mut *mut c_void,
@@ -155,29 +161,12 @@ pub mod jni {
             );
             assert!(result == 0);
 
-            let env = JNIEnv::from_raw(raw_env).unwrap();
+            let env = JNIEnv::from_raw(raw_env).expect("from_raw failed (raw_env is null?)");
             f(env);
 
+            // Detach JavaVM from the current thread after we done with it.
             let result = detach_current_thread(vm);
             assert!(result == 0);
-        }
-    }
-
-    impl DispatcherCallback for Context {
-        fn call(&mut self, r: Resp) {
-            with_attached_thread(self.vm, |env| {
-                let mut result = r.to_bytes().unwrap();
-                let byte_buffer = env.new_direct_byte_buffer(&mut result).unwrap();
-                let byte_buffer_obj = JValue::Object(*byte_buffer);
-
-                let dispatcher_this = self.dispatcher_this.as_obj();
-                env.call_method(
-                    dispatcher_this,
-                    "callback",
-                    "(Ljava/nio/ByteBuffer;)V",
-                    &[byte_buffer_obj],
-                ).unwrap();
-            });
         }
     }
 
@@ -191,9 +180,9 @@ pub mod jni {
         let dispatcher_this = env.new_global_ref(this).unwrap();
 
         unsafe {
+            // Extract JavaVM: it will be needed later in the callback.
             let raw_env = env.get_native_interface();
             let mut java_vm: *mut JavaVM = ptr::null_mut();
-
             let get_java_vm = (**raw_env).GetJavaVM.unwrap();
             let result = get_java_vm(raw_env, &mut java_vm as *mut *mut _);
             assert!(result == 0);
@@ -202,8 +191,8 @@ pub mod jni {
                 vm: java_vm,
                 dispatcher_this,
             };
-            let dispatcher = Box::new(Dispatcher::new(ctx));
-            Box::into_raw(dispatcher) as *mut c_void as jlong
+            let executor = Box::new(Executor::new(ctx));
+            Box::into_raw(executor) as *mut c_void as jlong
         }
     }
 
@@ -211,15 +200,16 @@ pub mod jni {
     pub extern "C" fn Java_me_pepyakin_turbosolver_capnp_Dispatcher_capnp_1send(
         env: JNIEnv,
         _: JClass,
-        dispatcher_this_ptr: jlong,
+        executor_ptr: jlong,
         data: jbyteArray,
     ) {
         // TODO: Can we get away without copying here?
-        let data_vec = env.convert_byte_array(data).unwrap();
-        let dispatcher = dispatcher_this_ptr as *mut c_void as *mut Dispatcher;
+        let data_vec = env.convert_byte_array(data).expect("couldn't copy `data`");
+        let req = Req::from_bytes(&data_vec).expect("wrong schema?");
 
         unsafe {
-            dispatcher.as_mut().unwrap().dispatch(&data_vec);
+            let executor = executor_ptr as *mut c_void as *mut Executor;
+            executor.as_mut().expect("`executor` is null").send(req);
         }
     }
 }
@@ -232,9 +222,11 @@ mod tests {
     fn test_encode() {
         let resp = Resp {
             id: 228,
-            kind: Ok(RespKind::SolverResult { solution: "hello world".to_string() }),
+            kind: Ok(RespKind::SolverResult {
+                solution: "hello world".to_string(),
+            }),
         };
-        let _bytes = resp.to_bytes().unwrap();
+        let _bytes = resp.to_bytes();
         // TODO: assert_eq
     }
 }

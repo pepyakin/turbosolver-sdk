@@ -188,8 +188,8 @@ public final class Api {
       }
       public Which which() {
         switch(_getShortField(4)) {
-          case 0 : return Which.ERRNO;
-          case 1 : return Which.SUCCESS;
+          case 0 : return Which.ERR;
+          case 1 : return Which.OK;
           default: return Which._NOT_IN_SCHEMA;
         }
       }
@@ -203,34 +203,34 @@ public final class Api {
         _setIntField(0, value);
       }
 
-      public final boolean isErrno() {
-        return which() == Resp.Which.ERRNO;
+      public final boolean isErr() {
+        return which() == Resp.Which.ERR;
       }
-      public final int getErrno() {
-        assert which() == Resp.Which.ERRNO:
+      public final int getErr() {
+        assert which() == Resp.Which.ERR:
                     "Must check which() before get()ing a union member.";
         return _getIntField(1);
       }
-      public final void setErrno(int value) {
-        _setShortField(4, (short)Resp.Which.ERRNO.ordinal());
+      public final void setErr(int value) {
+        _setShortField(4, (short)Resp.Which.ERR.ordinal());
         _setIntField(1, value);
       }
 
-      public final boolean isSuccess() {
-        return which() == Resp.Which.SUCCESS;
+      public final boolean isOk() {
+        return which() == Resp.Which.OK;
       }
-      public final me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.Builder getSuccess() {
-        assert which() == Resp.Which.SUCCESS:
+      public final me.pepyakin.turbosolver.capnp.Api.OkResp.Builder getOk() {
+        assert which() == Resp.Which.OK:
                     "Must check which() before get()ing a union member.";
-        return _getPointerField(me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.factory, 0, null, 0);
+        return _getPointerField(me.pepyakin.turbosolver.capnp.Api.OkResp.factory, 0, null, 0);
       }
-      public final void setSuccess(me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.Reader value) {
-        _setShortField(4, (short)Resp.Which.SUCCESS.ordinal());
-        _setPointerField(me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.factory,0, value);
+      public final void setOk(me.pepyakin.turbosolver.capnp.Api.OkResp.Reader value) {
+        _setShortField(4, (short)Resp.Which.OK.ordinal());
+        _setPointerField(me.pepyakin.turbosolver.capnp.Api.OkResp.factory,0, value);
       }
-      public final me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.Builder initSuccess() {
-        _setShortField(4, (short)Resp.Which.SUCCESS.ordinal());
-        return _initPointerField(me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.factory,0, 0);
+      public final me.pepyakin.turbosolver.capnp.Api.OkResp.Builder initOk() {
+        _setShortField(4, (short)Resp.Which.OK.ordinal());
+        return _initPointerField(me.pepyakin.turbosolver.capnp.Api.OkResp.factory,0, 0);
       }
     }
 
@@ -241,8 +241,8 @@ public final class Api {
 
       public Which which() {
         switch(_getShortField(4)) {
-          case 0 : return Which.ERRNO;
-          case 1 : return Which.SUCCESS;
+          case 0 : return Which.ERR;
+          case 1 : return Which.OK;
           default: return Which._NOT_IN_SCHEMA;
         }
       }
@@ -250,38 +250,38 @@ public final class Api {
         return _getIntField(0);
       }
 
-      public final boolean isErrno() {
-        return which() == Resp.Which.ERRNO;
+      public final boolean isErr() {
+        return which() == Resp.Which.ERR;
       }
-      public final int getErrno() {
-        assert which() == Resp.Which.ERRNO:
+      public final int getErr() {
+        assert which() == Resp.Which.ERR:
                     "Must check which() before get()ing a union member.";
         return _getIntField(1);
       }
 
-      public final boolean isSuccess() {
-        return which() == Resp.Which.SUCCESS;
+      public final boolean isOk() {
+        return which() == Resp.Which.OK;
       }
-      public boolean hasSuccess() {
+      public boolean hasOk() {
         return !_pointerFieldIsNull(0);
       }
-      public me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.Reader getSuccess() {
-        assert which() == Resp.Which.SUCCESS:
+      public me.pepyakin.turbosolver.capnp.Api.OkResp.Reader getOk() {
+        assert which() == Resp.Which.OK:
                     "Must check which() before get()ing a union member.";
-        return _getPointerField(me.pepyakin.turbosolver.capnp.Api.SuccessfulResponse.factory,0,null, 0);
+        return _getPointerField(me.pepyakin.turbosolver.capnp.Api.OkResp.factory,0,null, 0);
       }
 
     }
 
     public enum Which {
-      ERRNO,
-      SUCCESS,
+      ERR,
+      OK,
       _NOT_IN_SCHEMA,
     }
   }
 
 
-  public static class SuccessfulResponse {
+  public static class OkResp {
     public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)1);
     public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
       public Factory() {
@@ -293,7 +293,7 @@ public final class Api {
         return new Builder(segment, data, pointers, dataSize, pointerCount);
       }
       public final org.capnproto.StructSize structSize() {
-        return SuccessfulResponse.STRUCT_SIZE;
+        return OkResp.STRUCT_SIZE;
       }
       public final Reader asReader(Builder builder) {
         return builder.asReader();
@@ -318,47 +318,47 @@ public final class Api {
         return new Reader(segment, data, pointers, dataSize, pointerCount, 0x7fffffff);
       }
       public final boolean isCreateSolverResp() {
-        return which() == SuccessfulResponse.Which.CREATE_SOLVER_RESP;
+        return which() == OkResp.Which.CREATE_SOLVER_RESP;
       }
       public final me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.Builder getCreateSolverResp() {
-        assert which() == SuccessfulResponse.Which.CREATE_SOLVER_RESP:
+        assert which() == OkResp.Which.CREATE_SOLVER_RESP:
                     "Must check which() before get()ing a union member.";
         return _getPointerField(me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.factory, 0, null, 0);
       }
       public final void setCreateSolverResp(me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.Reader value) {
-        _setShortField(0, (short)SuccessfulResponse.Which.CREATE_SOLVER_RESP.ordinal());
+        _setShortField(0, (short)OkResp.Which.CREATE_SOLVER_RESP.ordinal());
         _setPointerField(me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.factory,0, value);
       }
       public final me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.Builder initCreateSolverResp() {
-        _setShortField(0, (short)SuccessfulResponse.Which.CREATE_SOLVER_RESP.ordinal());
+        _setShortField(0, (short)OkResp.Which.CREATE_SOLVER_RESP.ordinal());
         return _initPointerField(me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.factory,0, 0);
       }
       public final boolean isSolveResp() {
-        return which() == SuccessfulResponse.Which.SOLVE_RESP;
+        return which() == OkResp.Which.SOLVE_RESP;
       }
       public final me.pepyakin.turbosolver.capnp.Api.SolveResp.Builder getSolveResp() {
-        assert which() == SuccessfulResponse.Which.SOLVE_RESP:
+        assert which() == OkResp.Which.SOLVE_RESP:
                     "Must check which() before get()ing a union member.";
         return _getPointerField(me.pepyakin.turbosolver.capnp.Api.SolveResp.factory, 0, null, 0);
       }
       public final void setSolveResp(me.pepyakin.turbosolver.capnp.Api.SolveResp.Reader value) {
-        _setShortField(0, (short)SuccessfulResponse.Which.SOLVE_RESP.ordinal());
+        _setShortField(0, (short)OkResp.Which.SOLVE_RESP.ordinal());
         _setPointerField(me.pepyakin.turbosolver.capnp.Api.SolveResp.factory,0, value);
       }
       public final me.pepyakin.turbosolver.capnp.Api.SolveResp.Builder initSolveResp() {
-        _setShortField(0, (short)SuccessfulResponse.Which.SOLVE_RESP.ordinal());
+        _setShortField(0, (short)OkResp.Which.SOLVE_RESP.ordinal());
         return _initPointerField(me.pepyakin.turbosolver.capnp.Api.SolveResp.factory,0, 0);
       }
       public final boolean isDestroyResp() {
-        return which() == SuccessfulResponse.Which.DESTROY_RESP;
+        return which() == OkResp.Which.DESTROY_RESP;
       }
       public final org.capnproto.Void getDestroyResp() {
-        assert which() == SuccessfulResponse.Which.DESTROY_RESP:
+        assert which() == OkResp.Which.DESTROY_RESP:
                     "Must check which() before get()ing a union member.";
         return org.capnproto.Void.VOID;
       }
       public final void setDestroyResp(org.capnproto.Void value) {
-        _setShortField(0, (short)SuccessfulResponse.Which.DESTROY_RESP.ordinal());
+        _setShortField(0, (short)OkResp.Which.DESTROY_RESP.ordinal());
       }
 
     }
@@ -377,34 +377,34 @@ public final class Api {
         }
       }
       public final boolean isCreateSolverResp() {
-        return which() == SuccessfulResponse.Which.CREATE_SOLVER_RESP;
+        return which() == OkResp.Which.CREATE_SOLVER_RESP;
       }
       public boolean hasCreateSolverResp() {
         return !_pointerFieldIsNull(0);
       }
       public me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.Reader getCreateSolverResp() {
-        assert which() == SuccessfulResponse.Which.CREATE_SOLVER_RESP:
+        assert which() == OkResp.Which.CREATE_SOLVER_RESP:
                     "Must check which() before get()ing a union member.";
         return _getPointerField(me.pepyakin.turbosolver.capnp.Api.CreateSolverResp.factory,0,null, 0);
       }
 
       public final boolean isSolveResp() {
-        return which() == SuccessfulResponse.Which.SOLVE_RESP;
+        return which() == OkResp.Which.SOLVE_RESP;
       }
       public boolean hasSolveResp() {
         return !_pointerFieldIsNull(0);
       }
       public me.pepyakin.turbosolver.capnp.Api.SolveResp.Reader getSolveResp() {
-        assert which() == SuccessfulResponse.Which.SOLVE_RESP:
+        assert which() == OkResp.Which.SOLVE_RESP:
                     "Must check which() before get()ing a union member.";
         return _getPointerField(me.pepyakin.turbosolver.capnp.Api.SolveResp.factory,0,null, 0);
       }
 
       public final boolean isDestroyResp() {
-        return which() == SuccessfulResponse.Which.DESTROY_RESP;
+        return which() == OkResp.Which.DESTROY_RESP;
       }
       public final org.capnproto.Void getDestroyResp() {
-        assert which() == SuccessfulResponse.Which.DESTROY_RESP:
+        assert which() == OkResp.Which.DESTROY_RESP:
                     "Must check which() before get()ing a union member.";
         return org.capnproto.Void.VOID;
       }
@@ -482,7 +482,7 @@ public final class Api {
   }
 
 
-  public static class CreateSolverResp {
+  public static class SolveReq {
     public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)0);
     public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
       public Factory() {
@@ -494,7 +494,7 @@ public final class Api {
         return new Builder(segment, data, pointers, dataSize, pointerCount);
       }
       public final org.capnproto.StructSize structSize() {
-        return CreateSolverResp.STRUCT_SIZE;
+        return SolveReq.STRUCT_SIZE;
       }
       public final Reader asReader(Builder builder) {
         return builder.asReader();
@@ -533,7 +533,7 @@ public final class Api {
   }
 
 
-  public static class SolveReq {
+  public static class DestroyReq {
     public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)0);
     public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
       public Factory() {
@@ -545,7 +545,58 @@ public final class Api {
         return new Builder(segment, data, pointers, dataSize, pointerCount);
       }
       public final org.capnproto.StructSize structSize() {
-        return SolveReq.STRUCT_SIZE;
+        return DestroyReq.STRUCT_SIZE;
+      }
+      public final Reader asReader(Builder builder) {
+        return builder.asReader();
+      }
+    }
+    public static final Factory factory = new Factory();
+    public static final org.capnproto.StructList.Factory<Builder,Reader> listFactory =
+      new org.capnproto.StructList.Factory<Builder, Reader>(factory);
+    public static final class Builder extends org.capnproto.StructBuilder {
+      Builder(org.capnproto.SegmentBuilder segment, int data, int pointers,int dataSize, short pointerCount){
+        super(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final Reader asReader() {
+        return new Reader(segment, data, pointers, dataSize, pointerCount, 0x7fffffff);
+      }
+      public final int getId() {
+        return _getIntField(0);
+      }
+      public final void setId(int value) {
+        _setIntField(0, value);
+      }
+
+    }
+
+    public static final class Reader extends org.capnproto.StructReader {
+      Reader(org.capnproto.SegmentReader segment, int data, int pointers,int dataSize, short pointerCount, int nestingLimit){
+        super(segment, data, pointers, dataSize, pointerCount, nestingLimit);
+      }
+
+      public final int getId() {
+        return _getIntField(0);
+      }
+
+    }
+
+  }
+
+
+  public static class CreateSolverResp {
+    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)0);
+    public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
+      public Factory() {
+      }
+      public final Reader constructReader(org.capnproto.SegmentReader segment, int data,int pointers, int dataSize, short pointerCount, int nestingLimit) {
+        return new Reader(segment,data,pointers,dataSize,pointerCount,nestingLimit);
+      }
+      public final Builder constructBuilder(org.capnproto.SegmentBuilder segment, int data,int pointers, int dataSize, short pointerCount) {
+        return new Builder(segment, data, pointers, dataSize, pointerCount);
+      }
+      public final org.capnproto.StructSize structSize() {
+        return CreateSolverResp.STRUCT_SIZE;
       }
       public final Reader asReader(Builder builder) {
         return builder.asReader();
@@ -639,57 +690,6 @@ public final class Api {
       }
       public org.capnproto.Text.Reader getSolution() {
         return _getPointerField(org.capnproto.Text.factory, 0, null, 0, 0);
-      }
-
-    }
-
-  }
-
-
-  public static class DestroyReq {
-    public static final org.capnproto.StructSize STRUCT_SIZE = new org.capnproto.StructSize((short)1,(short)0);
-    public static final class Factory extends org.capnproto.StructFactory<Builder, Reader> {
-      public Factory() {
-      }
-      public final Reader constructReader(org.capnproto.SegmentReader segment, int data,int pointers, int dataSize, short pointerCount, int nestingLimit) {
-        return new Reader(segment,data,pointers,dataSize,pointerCount,nestingLimit);
-      }
-      public final Builder constructBuilder(org.capnproto.SegmentBuilder segment, int data,int pointers, int dataSize, short pointerCount) {
-        return new Builder(segment, data, pointers, dataSize, pointerCount);
-      }
-      public final org.capnproto.StructSize structSize() {
-        return DestroyReq.STRUCT_SIZE;
-      }
-      public final Reader asReader(Builder builder) {
-        return builder.asReader();
-      }
-    }
-    public static final Factory factory = new Factory();
-    public static final org.capnproto.StructList.Factory<Builder,Reader> listFactory =
-      new org.capnproto.StructList.Factory<Builder, Reader>(factory);
-    public static final class Builder extends org.capnproto.StructBuilder {
-      Builder(org.capnproto.SegmentBuilder segment, int data, int pointers,int dataSize, short pointerCount){
-        super(segment, data, pointers, dataSize, pointerCount);
-      }
-      public final Reader asReader() {
-        return new Reader(segment, data, pointers, dataSize, pointerCount, 0x7fffffff);
-      }
-      public final int getId() {
-        return _getIntField(0);
-      }
-      public final void setId(int value) {
-        _setIntField(0, value);
-      }
-
-    }
-
-    public static final class Reader extends org.capnproto.StructReader {
-      Reader(org.capnproto.SegmentReader segment, int data, int pointers,int dataSize, short pointerCount, int nestingLimit){
-        super(segment, data, pointers, dataSize, pointerCount, nestingLimit);
-      }
-
-      public final int getId() {
-        return _getIntField(0);
       }
 
     }
@@ -808,14 +808,14 @@ public static final org.capnproto.SegmentReader b_811606fa70edd713 =
    "\u0001\u0000\u00ff\u00ff\u0001\u0000\u0000\u0000" +
    "\u0000\u0000\u0001\u0000\u0001\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0049\u0000\u0000\u0000\u0032\u0000\u0000\u0000" +
+   "\u0049\u0000\u0000\u0000\"\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0044\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
    "\u0050\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
    "\u0002\u0000\u00fe\u00ff\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0001\u0000\u0002\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u004d\u0000\u0000\u0000\u0042\u0000\u0000\u0000" +
+   "\u004d\u0000\u0000\u0000\u001a\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0048\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
    "\u0054\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
@@ -827,7 +827,7 @@ public static final org.capnproto.SegmentReader b_811606fa70edd713 =
    "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0065\u0072\u0072\u006e\u006f\u0000\u0000\u0000" +
+   "\u0065\u0072\u0072\u0000\u0000\u0000\u0000\u0000" +
    "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
@@ -835,32 +835,31 @@ public static final org.capnproto.SegmentReader b_811606fa70edd713 =
    "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0073\u0075\u0063\u0063\u0065\u0073\u0073\u0000" +
+   "\u006f\u006b\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u002d\u0044\u00e7\u00f5\u00a4\u0072\u0095\u00b7" +
+   "\u00c7\u0060\u00ae\u0038\u0010\u00fc\u003a\u00b1" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0010\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
-public static final org.capnproto.SegmentReader b_b79572a4f5e7442d =
+public static final org.capnproto.SegmentReader b_b13afc1038ae60c7 =
    org.capnproto.GeneratedClassSupport.decodeRawBytes(
    "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
-   "\u002d\u0044\u00e7\u00f5\u00a4\u0072\u0095\u00b7" +
+   "\u00c7\u0060\u00ae\u0038\u0010\u00fc\u003a\u00b1" +
    "\n\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
    "\u009c\u0025\u0098\u00aa\u00ea\u009a\u00f2\u00e7" +
    "\u0001\u0000\u0007\u0000\u0000\u0000\u0003\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0015\u0000\u0000\u0000\u00ea\u0000\u0000\u0000" +
-   "\u0021\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
+   "\u0015\u0000\u0000\u0000\u008a\u0000\u0000\u0000" +
+   "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u001d\u0000\u0000\u0000\u00af\u0000\u0000\u0000" +
+   "\u0019\u0000\u0000\u0000\u00af\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0061\u0070\u0069\u002e\u0063\u0061\u0070\u006e" +
-   "\u0070\u003a\u0053\u0075\u0063\u0063\u0065\u0073" +
-   "\u0073\u0066\u0075\u006c\u0052\u0065\u0073\u0070" +
-   "\u006f\u006e\u0073\u0065\u0000\u0000\u0000\u0000" +
+   "\u0070\u003a\u004f\u006b\u0052\u0065\u0073\u0070" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
    "\u000c\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
    "\u0000\u0000\u00ff\u00ff\u0000\u0000\u0000\u0000" +
@@ -947,6 +946,74 @@ public static final org.capnproto.SegmentReader b_f98d1ba4320b82e9 =
    "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
+public static final org.capnproto.SegmentReader b_ffb55b32e25ffb06 =
+   org.capnproto.GeneratedClassSupport.decodeRawBytes(
+   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
+   "\u0006\u00fb\u005f\u00e2\u0032\u005b\u00b5\u00ff" +
+   "\n\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u009c\u0025\u0098\u00aa\u00ea\u009a\u00f2\u00e7" +
+   "\u0000\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0015\u0000\u0000\u0000\u009a\u0000\u0000\u0000" +
+   "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0019\u0000\u0000\u0000\u003f\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0061\u0070\u0069\u002e\u0063\u0061\u0070\u006e" +
+   "\u0070\u003a\u0053\u006f\u006c\u0076\u0065\u0052" +
+   "\u0065\u0071\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u0004\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\r\u0000\u0000\u0000\u001a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0008\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0014\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0069\u0064\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
+public static final org.capnproto.SegmentReader b_a5b3ba8682938ba8 =
+   org.capnproto.GeneratedClassSupport.decodeRawBytes(
+   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
+   "\u00a8\u008b\u0093\u0082\u0086\u00ba\u00b3\u00a5" +
+   "\n\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u009c\u0025\u0098\u00aa\u00ea\u009a\u00f2\u00e7" +
+   "\u0000\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0015\u0000\u0000\u0000\u00aa\u0000\u0000\u0000" +
+   "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0019\u0000\u0000\u0000\u003f\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0061\u0070\u0069\u002e\u0063\u0061\u0070\u006e" +
+   "\u0070\u003a\u0044\u0065\u0073\u0074\u0072\u006f" +
+   "\u0079\u0052\u0065\u0071\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
+   "\u0004\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\r\u0000\u0000\u0000\u001a\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0008\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
+   "\u0014\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
+   "\u0069\u0064\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
+   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
 public static final org.capnproto.SegmentReader b_8fd18e228e9c8fdb =
    org.capnproto.GeneratedClassSupport.decodeRawBytes(
    "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
@@ -965,40 +1032,6 @@ public static final org.capnproto.SegmentReader b_8fd18e228e9c8fdb =
    "\u0070\u003a\u0043\u0072\u0065\u0061\u0074\u0065" +
    "\u0053\u006f\u006c\u0076\u0065\u0072\u0052\u0065" +
    "\u0073\u0070\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
-   "\u0004\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\r\u0000\u0000\u0000\u001a\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0008\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
-   "\u0014\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
-   "\u0069\u0064\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
-public static final org.capnproto.SegmentReader b_ffb55b32e25ffb06 =
-   org.capnproto.GeneratedClassSupport.decodeRawBytes(
-   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
-   "\u0006\u00fb\u005f\u00e2\u0032\u005b\u00b5\u00ff" +
-   "\n\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
-   "\u009c\u0025\u0098\u00aa\u00ea\u009a\u00f2\u00e7" +
-   "\u0000\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0015\u0000\u0000\u0000\u009a\u0000\u0000\u0000" +
-   "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0019\u0000\u0000\u0000\u003f\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0061\u0070\u0069\u002e\u0063\u0061\u0070\u006e" +
-   "\u0070\u003a\u0053\u006f\u006c\u0076\u0065\u0052" +
-   "\u0065\u0071\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
    "\u0004\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
@@ -1049,40 +1082,6 @@ public static final org.capnproto.SegmentReader b_8ebfbe6f4b494c10 =
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u000c\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
-public static final org.capnproto.SegmentReader b_a5b3ba8682938ba8 =
-   org.capnproto.GeneratedClassSupport.decodeRawBytes(
-   "\u0000\u0000\u0000\u0000\u0005\u0000\u0006\u0000" +
-   "\u00a8\u008b\u0093\u0082\u0086\u00ba\u00b3\u00a5" +
-   "\n\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
-   "\u009c\u0025\u0098\u00aa\u00ea\u009a\u00f2\u00e7" +
-   "\u0000\u0000\u0007\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0015\u0000\u0000\u0000\u00aa\u0000\u0000\u0000" +
-   "\u001d\u0000\u0000\u0000\u0007\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0019\u0000\u0000\u0000\u003f\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0061\u0070\u0069\u002e\u0063\u0061\u0070\u006e" +
-   "\u0070\u003a\u0044\u0065\u0073\u0074\u0072\u006f" +
-   "\u0079\u0052\u0065\u0071\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0001\u0000\u0001\u0000" +
-   "\u0004\u0000\u0000\u0000\u0003\u0000\u0004\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\r\u0000\u0000\u0000\u001a\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0008\u0000\u0000\u0000\u0003\u0000\u0001\u0000" +
-   "\u0014\u0000\u0000\u0000\u0002\u0000\u0001\u0000" +
-   "\u0069\u0064\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
-   "\u0008\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" +
    "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000" + "");
 }
