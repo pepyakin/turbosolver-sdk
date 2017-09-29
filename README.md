@@ -1,15 +1,16 @@
 # TurboSolver SDK (Research)
 
-> Please note, that this project works only on Android and only on x86. The build tested only on macOS.
+> Please note, that this project works only on Android and only on x86_64. The build tested only on macOS.
 
 Mobile SDKs are hard, especially in case of Android because JNI bindings are tedious to write. This project aiming to explore other possibilities.
-
-The primary idea is to define thin layer for the "transport" and then do the actual communication with it, without sharding concrete objects between two. A big advantage of this kind of approach is decreasing surface API. In case of JNI this could be a big win.
 
 At the moment there are 2 implementations:
 
 - local HTTP server and
 - [Cap'n Proto](https://capnproto.org/)
+- JNR
+
+The primary idea of the first two is to define thin layer for the "transport" and then do the actual communication with it, without sharding concrete objects between two. A big advantage of this kind of approaches is decreasing surface of an API. In case of JNI this could be a big win.
 
 But before diving into the guts lets go through the problem.
 
@@ -43,3 +44,16 @@ Messages can be in any serialization format you like, it can be JSON, but prefer
 - [Android side](https://github.com/pepyakin/turbosolver-sdk/blob/master/android-demo/app/src/main/java/me/pepyakin/turbosolver/capnp/CapnpTurboSolver.kt)
 - [Rust side](https://github.com/pepyakin/turbosolver-sdk/blob/master/libsolver/src/capnproto.rs)
 - [Schema definition](https://github.com/pepyakin/turbosolver-sdk/blob/master/common/api.capnp)
+
+## JNR
+
+Actually JNR is pretty impressive! It let's you to use C functions without requiring you to write JNI bindings. But you should be careful as you exposed to the raw memory.
+
+Big downside of JNR is a lack of Android support. It took for me an entire day to figure this stuff out!
+
+- You need an Android build of jffi. [This repo](https://github.com/pepyakin/jffi)  could be useful,
+- Because jnr-ffi generates proxies at runtime, you need that proxies in Dex format (because Android's ART/Dalvik not into JVM bytecode). I choosed to generate compile .class files into .dex at runtime with DX and then load it with DexClassLoader. Here is a [commit](https://github.com/pepyakin/jnr-ffi/commit/01ed59708adc19a825d2d4fe19065d1912cfbac8) implementing this approach.
+- Some little hacks and workarounds that could be found [here](https://github.com/pepyakin/turbosolver-sdk/blob/39eae1762808de16f44f3213c092691624026074/android-demo/app/src/main/java/me/pepyakin/turbosolver/JnrTurboSolver.kt#L77-L106).
+
+- [Android side](https://github.com/pepyakin/turbosolver-sdk/blob/master/android-demo/app/src/main/java/me/pepyakin/turbosolver/JnrTurboSolver.kt)
+- [Rust side](https://github.com/pepyakin/turbosolver-sdk/blob/master/libsolver/src/ffi.rs)
