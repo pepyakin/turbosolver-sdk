@@ -11,12 +11,21 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
     buildTypes {
+        debug {
+            shrinkResources false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    packagingOptions{
+        doNotStrip "*/armeabi/*.so"
+        doNotStrip "*/armeabi-v7a/*.so"
+        doNotStrip "*/x86_64/*.so"
     }
 }
 
@@ -35,9 +44,11 @@ dependencies {
     compile 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
     compile 'org.capnproto:runtime:0.1.2'
     compile 'org.mariuszgromada.math:Janet-Sudoku:1.1.1'
+    compile 'com.github.jnr:jnr-ffi:2.1.7-SNAPSHOT'
     testCompile 'junit:junit:4.12'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
 }
 repositories {
+    mavenLocal()
     mavenCentral()
 }

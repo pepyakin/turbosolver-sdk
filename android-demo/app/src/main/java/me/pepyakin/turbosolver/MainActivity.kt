@@ -9,7 +9,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import me.pepyakin.turbosolver.capnp.CapnpTurboSolverFactory
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,7 +67,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun solveSudoku(grid: String): Single<String> {
         // val factory = CapnpTurboSolverFactory.create()
-        val factory = LocalHttpTurboSolverFactory.create()
+        // val factory = LocalHttpTurboSolverFactory.create()
+        val factory = JnrTurboSolverFactory.create(this)
 
         val solverFuture = factory.create(grid)
         return solverFuture
