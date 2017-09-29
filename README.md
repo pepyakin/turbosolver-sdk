@@ -27,7 +27,7 @@ It is a bit silly: solver can be created with only one grid and then solved mult
 
 ## HTTP Server
 
-Just start a new HTTP server and do requests to it encoded with JSON. That's it. HTTP is very mature and there are a lot of tools around, JSON is on par. Your library would be useful not only from iOS and Android, but probably on . No schema needed, you can start right away.
+Just start a new HTTP server and do requests to it encoded with JSON. That's it. HTTP is very mature and there are a lot of tools around, JSON is on par. Your library would be useful not only from iOS and Android, but probably anywhere where HTTP is supported. No schema needed, you can start right away.
 The biggest drawback is the overhead. Also, for better or worse, HTTP server that bound on localhost can accept connection from the any app running on the device, and I don't found a way to prevent that. If it's not desired you probably can do somekind of authorization (in this project there is none). Also, it is generally for request-response workflows.
 
 Local HTTP server is probably the simplest way to use your library from Android and iOS.
