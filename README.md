@@ -39,7 +39,7 @@ Local HTTP server is probably the simplest way to use your library from Android 
 
 The idea is to define [actor](https://en.wikipedia.org/wiki/Actor_model) like system and communicate with it only with messages without having any shared memory. This approach has benefits of reduced complexity and simpler threading model. With proper implementation it could be possible to avoid copying messages on the FFI boundaries.
 
-Messages can be in any serialization format you like, it can be JSON, but preferrably something more efficient like [Flatbuffers](https://google.github.io/flatbuffers/flatbuffers_support.html). I choosed [Cap' Proto](https://capnproto.org/) because I had always wanted to play with it.
+Messages can be in any serialization format you like, it can be JSON, but preferrably something more efficient like [Flatbuffers](https://google.github.io/flatbuffers/flatbuffers_support.html). I chose [Cap' Proto](https://capnproto.org/) because I had always wanted to play with it.
 
 - [Android side](https://github.com/pepyakin/turbosolver-sdk/blob/master/android-demo/app/src/main/java/me/pepyakin/turbosolver/capnp/CapnpTurboSolver.kt)
 - [Rust side](https://github.com/pepyakin/turbosolver-sdk/blob/master/libsolver/src/capnproto.rs)
@@ -52,7 +52,7 @@ Actually JNR is pretty impressive! It let's you to use C functions without requi
 Big downside of JNR is a lack of Android support. It took for me an entire day to figure this stuff out!
 
 - You need an Android build of jffi. [This repo](https://github.com/pepyakin/jffi)  could be useful,
-- Because jnr-ffi generates proxies at runtime, you need that proxies in Dex format (because Android's ART/Dalvik not into JVM bytecode). I choosed to generate compile .class files into .dex at runtime with DX and then load it with DexClassLoader. Here is a [commit](https://github.com/pepyakin/jnr-ffi/commit/01ed59708adc19a825d2d4fe19065d1912cfbac8) implementing this approach.
+- Because jnr-ffi generates proxies at runtime, you need that proxies in Dex format (because Android's ART/Dalvik not into JVM bytecode). I chose to generate compile .class files into .dex at runtime with DX and then load it with DexClassLoader. Here is a [commit](https://github.com/pepyakin/jnr-ffi/commit/01ed59708adc19a825d2d4fe19065d1912cfbac8) implementing this approach.
 - Some little hacks and workarounds that could be found [here](https://github.com/pepyakin/turbosolver-sdk/blob/39eae1762808de16f44f3213c092691624026074/android-demo/app/src/main/java/me/pepyakin/turbosolver/JnrTurboSolver.kt#L77-L106).
 
 - [Android side](https://github.com/pepyakin/turbosolver-sdk/blob/master/android-demo/app/src/main/java/me/pepyakin/turbosolver/JnrTurboSolver.kt)
