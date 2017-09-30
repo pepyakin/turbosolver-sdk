@@ -60,7 +60,8 @@ class MainActivity : AppCompatActivity() {
                     solutionTextView.text = if (solution != null) {
                         "Solution:\n" + solution
                     } else {
-                        "Error:\n" + error
+                        // Blow up the app!
+                        kotlin.error(error)
                     }
                 }
     }
